@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   createTimeZoneHotpatch,
   defaultConfig,
-  inspectTimeZoneSupport
+  inspectTimeZoneSupport,
+  resolveLocalDateTime,
+  resolveTimeZone
 } from "../src/index.js";
 import { rules } from "../src/rules.js";
 import { defaultTranslations } from "../src/translations.js";
@@ -87,6 +89,67 @@ describe("createTimeZoneHotpatch", () => {
     expect(defaultConfig.fallbackLocale).toBe("en-CA");
   });
 
+  it("resolves with the same results as the package root", () => {
+    const instance = createTimeZoneHotpatch();
+    const instant = {
+      instant: "2026-11-02T12:00:00Z",
+      timeZoneId: "America/Edmonton"
+    };
+    const local = {
+      localDateTime: "2026-11-02T12:00:00",
+      timeZoneId: "America/Edmonton",
+      disambiguation: "compatible"
+    } as const;
+    expect(instance.resolveTimeZone(instant)).toEqual(resolveTimeZone(instant));
+    expect(instance.resolveLocalDateTime(local)).toEqual(
+      resolveLocalDateTime(local)
+    );
+  });
+
+  it("labels results with supplemented and overridden translations", () => {
+    const instance = createTimeZoneHotpatch({
+      translations: {
+        "fr-CA": { "ab-permanent-time-2026": "Heure de l'Alberta" },
+        "en-CA": { "bc-permanent-time-2026": "B.C. Time" }
+      }
+    });
+    const input = {
+      instant: "2026-11-02T12:00:00Z",
+      timeZoneId: "America/Edmonton"
+    };
+    expect(instance.resolveTimeZone({ ...input, locale: "fr-CA" }).label).toBe(
+      "Heure de l'Alberta"
+    );
+    expect(instance.resolveTimeZone(input).label).toBe("Alberta Time (ABT)");
+    expect(
+      instance.resolveLocalDateTime({
+        localDateTime: "2026-11-02T12:00:00",
+        timeZoneId: "America/Vancouver",
+        disambiguation: "compatible",
+        locale: ["ja-JP", "en-CA"]
+      }).label
+    ).toBe("B.C. Time");
+    expect(resolveTimeZone({ ...input, locale: "fr-CA" }).label).toBe(
+      "Alberta Time (ABT)"
+    );
+  });
+
+  it("labels through the configured fallback locale", () => {
+    const instance = createTimeZoneHotpatch({
+      translations: {
+        "fr-CA": { "ab-permanent-time-2026": "Heure de l'Alberta" }
+      },
+      fallbackLocale: "fr-CA"
+    });
+    expect(
+      instance.resolveTimeZone({
+        instant: "2026-11-02T12:00:00Z",
+        timeZoneId: "America/Edmonton",
+        locale: "ja-JP"
+      }).label
+    ).toBe("Heure de l'Alberta");
+  });
+
   it("cannot alter rules or offsets", () => {
     const { config } = createTimeZoneHotpatch({
       // @ts-expect-error rules are not configurable
@@ -94,5 +157,13 @@ describe("createTimeZoneHotpatch", () => {
       translations: { "en-CA": { "ab-permanent-time-2026": "Custom" } }
     });
     expect(config.rules).toBe(rules);
+    expect(
+      createTimeZoneHotpatch({
+        translations: { "en-CA": { "ab-permanent-time-2026": "Custom" } }
+      }).resolveTimeZone({
+        instant: "2026-11-02T12:00:00Z",
+        timeZoneId: "America/Edmonton"
+      }).offset
+    ).toBe("-06:00");
   });
 });

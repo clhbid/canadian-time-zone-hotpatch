@@ -15,7 +15,9 @@
  *       simulatedHostModule(await importOriginal(), hostState)
  *     );
  */
+import type { HostInstant, HostPlainDateTime } from "../../src/host.js";
 import type * as hostModule from "../../src/host.js";
+import type { Disambiguation } from "../../src/types.js";
 
 export type HostModule = typeof hostModule;
 
@@ -114,6 +116,54 @@ export function simulateHostOffset(
     : zone.standard;
 }
 
+const day = 86_400_000;
+
+/**
+ * Instant a simulated host assigns to the wall-clock time `local`, following
+ * Temporal's disambiguation semantics against the simulated offsets, or
+ * `undefined` for a zone this fixture does not model.
+ */
+export function simulateHostInstant(
+  tzdata: SimulatedTzdata,
+  timeZoneId: string,
+  local: HostPlainDateTime,
+  disambiguation: Disambiguation
+): HostInstant | undefined {
+  const zone = seasonalZones[timeZoneId];
+  if (!zone) {
+    return undefined;
+  }
+  const wall = local.toZonedDateTime("UTC").toInstant();
+  const at = (offset: string) =>
+    wall.subtract({ milliseconds: offsetToMilliseconds(offset) });
+  const offsetAt = (instant: HostInstant) =>
+    simulateHostOffset(tzdata, timeZoneId, instant.epochMilliseconds);
+
+  // An offset is valid only if the host reports it at the instant it
+  // produces; ascending order makes the first candidate the earlier one.
+  const valid = [zone.daylight, zone.standard]
+    .map((offset) => ({ offset, instant: at(offset) }))
+    .filter(({ offset, instant }) => offsetAt(instant) === offset)
+    .map(({ instant }) => instant)
+    .sort((a, b) => a.epochMilliseconds - b.epochMilliseconds);
+
+  if (valid.length === 1) {
+    return valid[0];
+  }
+  if (disambiguation === "reject") {
+    throw new RangeError(`${valid.length ? "Ambiguous" : "Nonexistent"} time`);
+  }
+  if (valid.length === 2) {
+    return valid[disambiguation === "later" ? 1 : 0];
+  }
+  // A gap: `earlier` applies the offset in force after it, the others the
+  // offset in force before it.
+  const offsetBefore = offsetAt(wall.subtract({ milliseconds: day }));
+  const offsetAfter = offsetAt(wall.add({ milliseconds: day }));
+  const offset = disambiguation === "earlier" ? offsetAfter : offsetBefore;
+  return offset === undefined ? undefined : at(offset);
+}
+
 /**
  * Builds a replacement for `src/host.ts` whose observations for governed
  * zones come from `state.tzdata`, and from the real host for everything else.
@@ -136,6 +186,12 @@ export function simulatedHostModule(
           timeZoneId,
           instant.epochMilliseconds
         ) ?? actual.observeOffset(timeZoneId, instant)
+      );
+    },
+    observeInstant(timeZoneId, local, disambiguation) {
+      return (
+        simulateHostInstant(state.tzdata, timeZoneId, local, disambiguation) ??
+        actual.observeInstant(timeZoneId, local, disambiguation)
       );
     }
   };
