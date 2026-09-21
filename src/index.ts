@@ -5,8 +5,4 @@
 export type { RuleCitation, TimeZoneRule, TranslationDictionary } from "./types.js";
 
 export { rules } from "./rules.js";
-export {
-  defaultFallbackLocale,
-  defaultTranslations,
-  mergeTranslations,
-} from "./translations.js";
+export { defaultFallbackLocale, defaultTranslations, mergeTranslations } from "./translations.js";
