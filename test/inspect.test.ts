@@ -35,7 +35,7 @@ describe("inspectTimeZoneSupport", () => {
       ["America/Vancouver", "bc-permanent-time-2026"],
       ["America/Winnipeg", "mb-permanent-time-2026"]
     ])("governs %s under %s", (timeZoneId, ruleId) => {
-      expect(inspectTimeZoneSupport({ timeZoneId }).ruleId).toBe(ruleId);
+      expect(inspectTimeZoneSupport({ timeZoneId })).toMatchObject({ ruleId });
     });
 
     it.each([
@@ -117,9 +117,11 @@ describe("inspectTimeZoneSupport", () => {
         timeZoneId: "America/Edmonton",
         instant: "2026-11-02T12:00:00Z"
       });
-      expect(result.status).toBe("current");
-      expect(result.expectedOffset).toBe("-06:00");
-      expect(result.observedOffset).toBe("-06:00");
+      expect(result).toMatchObject({
+        status: "current",
+        expectedOffset: "-06:00",
+        observedOffset: "-06:00"
+      });
     });
 
     it.each([
@@ -133,10 +135,12 @@ describe("inspectTimeZoneSupport", () => {
           timeZoneId,
           instant: "2026-12-25T12:00:00Z"
         });
-        expect(result.status).toBe("stale");
-        expect(result.expectedOffset).toBe(expectedOffset);
-        expect(result.observedOffset).toBe(observedOffset);
-        expect(result.firstDivergence).toBe(firstDivergence);
+        expect(result).toMatchObject({
+          status: "stale",
+          expectedOffset,
+          observedOffset,
+          firstDivergence
+        });
       }
     );
 
@@ -213,10 +217,11 @@ describe("inspectTimeZoneSupport", () => {
     ])(
       "probes %s at its own first divergence",
       (timeZoneId, expectedOffset, observedOffset) => {
-        const result = inspectTimeZoneSupport({ timeZoneId });
-        expect(result.status).toBe("stale");
-        expect(result.expectedOffset).toBe(expectedOffset);
-        expect(result.observedOffset).toBe(observedOffset);
+        expect(inspectTimeZoneSupport({ timeZoneId })).toMatchObject({
+          status: "stale",
+          expectedOffset,
+          observedOffset
+        });
       }
     );
   });

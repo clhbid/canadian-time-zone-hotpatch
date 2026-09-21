@@ -57,20 +57,29 @@ export interface InspectTimeZoneSupportInput {
   readonly instant?: string;
 }
 
-/** Result of inspecting a time zone identifier's support on the running host. */
-export interface TimeZoneSupport {
-  readonly status: TimeZoneSupportStatus;
-  /** The canonical identifier for a governed zone; otherwise the identifier as given. */
-  readonly timeZoneId: string;
-  /** Governing rule, present for `current` and `stale` results. */
-  readonly ruleId?: RuleId;
-  /** Offset the rule requires at the probed instant, e.g. `"-06:00"`. */
-  readonly expectedOffset?: string;
-  /** Offset the host reports at the probed instant. */
-  readonly observedOffset?: string;
-  /** First instant a legacy host and the governing rule disagree. */
-  readonly firstDivergence?: string;
-}
+/**
+ * Result of inspecting a time zone identifier's support on the running host.
+ * Governed zones (`current` and `stale`) carry the diagnostics telemetry
+ * aggregates; ungoverned zones carry only the identifier as given.
+ */
+export type TimeZoneSupport =
+  | {
+      readonly status: "current" | "stale";
+      /** The canonical identifier of the governed zone. */
+      readonly timeZoneId: string;
+      readonly ruleId: RuleId;
+      /** Offset the rule requires at the probed instant, e.g. `"-06:00"`. */
+      readonly expectedOffset: string;
+      /** Offset the host reports at the probed instant. */
+      readonly observedOffset: string;
+      /** First instant a legacy host and the governing rule disagree. */
+      readonly firstDivergence: string;
+    }
+  | {
+      readonly status: "not_applicable" | "unknown";
+      /** The identifier as given. */
+      readonly timeZoneId: string;
+    };
 
 export interface HotpatchConfig {
   /** The package's built-in, source-cited rules; configuration cannot change them. */
