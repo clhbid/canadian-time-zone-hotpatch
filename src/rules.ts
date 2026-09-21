@@ -23,29 +23,13 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     jurisdiction: "Alberta",
     offset: "-06:00",
     fixedTimeZoneId: "Etc/GMT+6",
-    // Order in Council 204/2026 proclaimed the Official Time Act in force on
-    // June 18. The Act fixes official time at UTC-6.
+    // Order in Council 204/2026 proclaimed the Official Time Act in force on June 18.
+    // Sources:
+    // - https://kings-printer.alberta.ca/Documents/Orders/Orders_in_Council/2026/2026_204.html
+    // - https://www.canlii.org/en/ab/laws/stat/rsa-2000-c-o-5.7/latest/rsa-2000-c-o-5.7.html
     legalEffectiveInstant: "2026-06-18T00:00:00-06:00",
     // The next scheduled "fall back" is skipped; clocks stay at -06:00.
-    firstDivergenceInstant: "2026-11-01T02:00:00-06:00",
-    citations: Object.freeze([
-      Object.freeze({
-        title: "Order in Council 204/2026",
-        url: "https://kings-printer.alberta.ca/Documents/Orders/Orders_in_Council/2026/2026_204.html"
-      }),
-      Object.freeze({
-        title: "Official Time Act",
-        url: "https://www.canlii.org/en/ab/laws/stat/rsa-2000-c-o-5.7/latest/rsa-2000-c-o-5.7.html"
-      }),
-      Object.freeze({
-        title: "Alberta Is Set to Adopt Permanent Daylight Saving Time",
-        url: "https://www.timeanddate.com/news/time/alberta-permanent-dst.html"
-      }),
-      Object.freeze({
-        title: "Alberta Time Is Official: Bill 31 Ends Clock Changes",
-        url: "https://www.culturealberta.com/articles/alberta-time-is-official-bill-31-ends-clock-changes-for-good-in-alberta"
-      })
-    ])
+    firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
   }),
   Object.freeze({
     ruleId: "bc-permanent-time-2026",
@@ -54,25 +38,12 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     jurisdiction: "British Columbia",
     offset: "-07:00",
     fixedTimeZoneId: "Etc/GMT+7",
-    // Order in Council 63/2026 brings the Interpretation Amendment Act into
-    // force at the start of March 9, 2026 in B.C.'s new UTC-7 Pacific time.
+    // Order in Council 63/2026 brings the Interpretation Amendment Act into force
+    // at the start of March 9, 2026 in B.C.'s new UTC-7 Pacific time.
+    // Source: https://www.bclaws.gov.bc.ca/civix/document/id/oic/oic_cur/0063_2026
     legalEffectiveInstant: "2026-03-09T00:00:00-07:00",
     // The next scheduled "fall back" is skipped; clocks stay at -07:00.
-    firstDivergenceInstant: "2026-11-01T02:00:00-07:00",
-    citations: Object.freeze([
-      Object.freeze({
-        title: "Order in Council No. 63/2026",
-        url: "https://www.bclaws.gov.bc.ca/civix/document/id/oic/oic_cur/0063_2026"
-      }),
-      Object.freeze({
-        title: "British Columbia (BC) Adopts Permanent Daylight Saving Time",
-        url: "https://www.timeanddate.com/news/time/canada-bc-permanent-dst.html"
-      }),
-      Object.freeze({
-        title: "Permanent daylight saving time — Province of British Columbia",
-        url: "https://www2.gov.bc.ca/gov/content/governments/celebrating-british-columbia/daylight-saving-time"
-      })
-    ])
+    firstDivergenceInstant: "2026-11-01T02:00:00-07:00"
   }),
   Object.freeze({
     ruleId: "mb-permanent-time-2026",
@@ -83,17 +54,10 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     fixedTimeZoneId: "Etc/GMT+5",
     // Manitoba announced that the next scheduled "fall back" will be skipped,
     // but has not yet proclaimed a legal commencement.
-    firstDivergenceInstant: "2026-11-01T02:00:00-05:00",
-    citations: Object.freeze([
-      Object.freeze({
-        title: "The Official Time Amendment Act (S.M. 2023, c. 4)",
-        url: "https://web2.gov.mb.ca/laws/statutes/2023/c00423.php?lang=en"
-      }),
-      Object.freeze({
-        title: "Manitoba Will Move to Permanent Daylight Time",
-        url: "https://news.gov.mb.ca/news/?item=75397"
-      })
-    ])
+    // Sources:
+    // - https://web2.gov.mb.ca/laws/statutes/2023/c00423.php?lang=en
+    // - https://news.gov.mb.ca/news/?item=75397
+    firstDivergenceInstant: "2026-11-01T02:00:00-05:00"
   })
 ]);
 

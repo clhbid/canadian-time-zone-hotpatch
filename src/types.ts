@@ -7,12 +7,6 @@ export type RuleId =
   | "bc-permanent-time-2026"
   | "mb-permanent-time-2026";
 
-/** A source citation backing a rule's effective and divergence instants. */
-export interface RuleCitation {
-  readonly title: string;
-  readonly url: string;
-}
-
 /** A correction rule for a Canadian time zone moving to a permanent UTC offset. */
 export interface TimeZoneRule {
   /** Stable identifier for this rule. */
@@ -31,8 +25,6 @@ export interface TimeZoneRule {
   readonly legalEffectiveInstant?: string;
   /** First instant a legacy (seasonal) host and the rule disagree. */
   readonly firstDivergenceInstant: string;
-  /** Source citation(s) for this rule. */
-  readonly citations: readonly RuleCitation[];
 }
 
 /** A locale-keyed dictionary of rule-id-keyed labels. */

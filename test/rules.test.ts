@@ -7,17 +7,6 @@ describe("rules", () => {
     for (const rule of rules) {
       expect(Object.isFrozen(rule)).toBe(true);
       expect(Object.isFrozen(rule.aliases)).toBe(true);
-      expect(Object.isFrozen(rule.citations)).toBe(true);
-    }
-  });
-
-  it("cites at least one source per rule", () => {
-    for (const rule of rules) {
-      expect(rule.citations.length).toBeGreaterThan(0);
-      for (const citation of rule.citations) {
-        expect(citation.title.length).toBeGreaterThan(0);
-        expect(() => new URL(citation.url)).not.toThrow();
-      }
     }
   });
 
