@@ -14,8 +14,8 @@ The bundled rules currently cover:
 - British Columbia — `America/Vancouver` / `Canada/Pacific`
 - Manitoba — `America/Winnipeg` / `Canada/Central`
 
-Each internal rule records its source citations, including the enacted Manitoba legal source used
-for its commencement date.
+Each internal rule records its source citations. Manitoba's permanent-time change has been
+announced but not yet proclaimed, so its legal commencement remains unset.
 
 ## Agent skills
 

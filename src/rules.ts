@@ -81,15 +81,13 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     jurisdiction: "Manitoba",
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
-    // Bill 223 commences at the start of March 8, 2026; legacy host data does
-    // not permanently diverge until the later skipped "fall back".
-    legalEffectiveInstant: "2026-03-08T00:00:00-06:00",
-    // The next scheduled "fall back" is skipped; clocks stay at -05:00.
+    // Manitoba announced that the next scheduled "fall back" will be skipped,
+    // but has not yet proclaimed a legal commencement.
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00",
     citations: Object.freeze([
       Object.freeze({
-        title: "The Official Time Amendment Act, 2025 (Bill 223)",
-        url: "https://web2.gov.mb.ca/bills/43-2/b223e.php"
+        title: "The Official Time Amendment Act (S.M. 2023, c. 4)",
+        url: "https://web2.gov.mb.ca/laws/statutes/2023/c00423.php?lang=en"
       }),
       Object.freeze({
         title: "Manitoba Will Move to Permanent Daylight Time",

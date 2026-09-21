@@ -23,6 +23,9 @@ describe("rules", () => {
 
   it("records a legal commencement instant no later than the first divergence", () => {
     for (const rule of rules) {
+      if (!rule.legalEffectiveInstant) {
+        continue;
+      }
       const legal = Date.parse(rule.legalEffectiveInstant);
       const divergence = Date.parse(rule.firstDivergenceInstant);
       expect(Number.isNaN(legal)).toBe(false);
@@ -44,11 +47,26 @@ describe("rules", () => {
     }
   );
 
-  it("records the British Columbia rule as legally effective on March 9, 2026", () => {
-    expect(findRule("America/Vancouver")?.legalEffectiveInstant).toBe(
-      "2026-03-09T00:00:00-07:00"
-    );
-  });
+  it.each([
+    [
+      "America/Edmonton",
+      "2026-06-18T00:00:00-06:00",
+      "2026-11-01T02:00:00-06:00"
+    ],
+    [
+      "America/Vancouver",
+      "2026-03-09T00:00:00-07:00",
+      "2026-11-01T02:00:00-07:00"
+    ],
+    ["America/Winnipeg", undefined, "2026-11-01T02:00:00-05:00"]
+  ])(
+    "records the legal and first-divergent instants for %s",
+    (timeZoneId, legalEffectiveInstant, firstDivergenceInstant) => {
+      const rule = findRule(timeZoneId);
+      expect(rule?.legalEffectiveInstant).toBe(legalEffectiveInstant);
+      expect(rule?.firstDivergenceInstant).toBe(firstDivergenceInstant);
+    }
+  );
 
   it.each([
     ["america/edmonton", "canada/mountain", "America/Edmonton"],

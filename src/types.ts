@@ -27,8 +27,8 @@ export interface TimeZoneRule {
   readonly offset: string;
   /** Fixed-offset `Etc/GMT` zone equivalent to `offset`, used for correction. */
   readonly fixedTimeZoneId: string;
-  /** Instant the legislated offset legally commences (comes into force). */
-  readonly legalEffectiveInstant: string;
+  /** Instant the legislated offset legally commences, when it has been enacted. */
+  readonly legalEffectiveInstant?: string;
   /** First instant a legacy (seasonal) host and the rule disagree. */
   readonly firstDivergenceInstant: string;
   /** Source citation(s) for this rule. */
