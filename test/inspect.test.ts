@@ -1,5 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { HostModule } from "./fixtures/simulated-host.js";
 import { inspectTimeZoneSupport } from "../src/index.js";
+
+const hostState = vi.hoisted(() => ({ tzdata: "stale" as "stale" | "current" }));
+
+// The runner's own tzdata may or may not know about the 2026 Canadian rules,
+// so every host observation is served by a deterministic simulation instead.
+vi.mock("../src/host.js", async (importOriginal) => {
+  const actual = await importOriginal<HostModule>();
+  const { simulatedHostModule } = await import("./fixtures/simulated-host.js");
+  return simulatedHostModule(actual, hostState);
+});
+
+beforeEach(() => {
+  hostState.tzdata = "stale";
+});
 
 describe("inspectTimeZoneSupport", () => {
   it("reports current for a governed zone before its rule diverges", () => {
@@ -20,6 +35,17 @@ describe("inspectTimeZoneSupport", () => {
     expect(result.expectedOffset).toBe("-06:00");
     expect(result.observedOffset).toBe("-07:00");
     expect(result.firstDivergence).toBe("2026-11-01T02:00:00-06:00");
+  });
+
+  it("reports current on a host whose tzdata already knows the rule", () => {
+    hostState.tzdata = "current";
+    const result = inspectTimeZoneSupport({
+      timeZoneId: "America/Edmonton",
+      instant: "2026-11-02T12:00:00Z",
+    });
+    expect(result.status).toBe("current");
+    expect(result.expectedOffset).toBe("-06:00");
+    expect(result.observedOffset).toBe("-06:00");
   });
 
   it("performs an unbiased rule-owned probe when no instant is given", () => {

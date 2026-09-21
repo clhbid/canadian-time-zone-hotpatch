@@ -91,7 +91,7 @@ resolveTimeZone(input: {
 }): ResolvedTimeZone;
 
 resolveLocalDateTime(input: {
-  localDateTime: string;
+  localDateTime: string; // wall-clock only: a UTC offset or "Z" is rejected
   timeZoneId: string;
   disambiguation: "compatible" | "earlier" | "later" | "reject";
   locale?: Intl.LocalesArgument;
@@ -107,9 +107,12 @@ resolveLocalDateTime(input: {
 - `unknown` — the identifier could not be recognized as a valid time zone at all.
 
 `inspectTimeZoneSupport`/`resolveTimeZone`/`resolveLocalDateTime` never sniff the user agent or a
-version string — support is always determined from observed offsets. Resolution throws
-(`UnknownTimeZoneError`, or a native `RangeError` for malformed instants/local date-times) rather
-than silently choosing a jurisdiction for input it can't recognize.
+version string — support is always determined from observed offsets. A correction is applied only
+when the host's own data is `stale`: on a host whose tzdata already knows a rule, both resolvers
+keep the canonical named zone. Resolution throws (`UnknownTimeZoneError`,
+`OffsetBearingLocalDateTimeError` for a local date-time carrying a UTC offset or `Z`, or a native
+`RangeError` for malformed instants and for `disambiguation: "reject"`) rather than silently
+choosing a jurisdiction — or an instant — for input it can't recognize.
 
 ## Governed rules (source-cited)
 
@@ -119,12 +122,14 @@ than silently choosing a jurisdiction for input it can't recognize.
 | British Columbia | `America/Vancouver` | `Canada/Pacific`  | `-07:00` (PCT)   | Pacific Time (PCT)  |
 | Manitoba         | `America/Winnipeg`  | `Canada/Central`  | `-05:00` (MBT)   | Manitoba Time (MBT) |
 
-Each rule models a `legalEffectiveInstant` (when the legislation formally took/takes effect) and a
+Each rule models a `legalEffectiveInstant` (when the legislated offset legally commences — not when
+the legislation received Royal Assent or was announced) and a
 `firstDivergenceInstant` (the first wall-clock moment a legacy, un-patched host's seasonal data
 would diverge from the legislated offset — typically the next scheduled "fall back") separately.
 Sources:
 
-- Alberta — [Alberta Is Set to Adopt Permanent Daylight Saving Time](https://www.timeanddate.com/news/time/alberta-permanent-dst.html),
+- Alberta — [Official Time Regulation (Alta. Reg. 136/2026)](https://open.alberta.ca/publications/official-time-regulation),
+  [Alberta Is Set to Adopt Permanent Daylight Saving Time](https://www.timeanddate.com/news/time/alberta-permanent-dst.html),
   [Alberta Time Is Official: Bill 31 Ends Clock Changes](https://www.culturealberta.com/articles/alberta-time-is-official-bill-31-ends-clock-changes-for-good-in-alberta)
 - British Columbia — [BC Adopts Permanent Daylight Saving Time](https://www.timeanddate.com/news/time/canada-bc-permanent-dst.html),
   [Province of British Columbia](https://www2.gov.bc.ca/gov/content/governments/celebrating-british-columbia/daylight-saving-time)

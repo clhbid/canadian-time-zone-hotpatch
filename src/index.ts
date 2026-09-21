@@ -23,7 +23,7 @@ export type {
 
 export { rules } from "./rules.js";
 export { defaultTranslations, defaultFallbackLocale, mergeTranslations } from "./translations.js";
-export { UnknownTimeZoneError } from "./resolve.js";
+export { UnknownTimeZoneError, OffsetBearingLocalDateTimeError } from "./resolve.js";
 export { createTimeZoneHotpatch, defaultConfig } from "./config.js";
 
 import { createTimeZoneHotpatch } from "./config.js";

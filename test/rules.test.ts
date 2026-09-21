@@ -21,9 +21,13 @@ describe("rules", () => {
     }
   });
 
-  it("models legalEffectiveInstant and firstDivergenceInstant separately", () => {
+  it("records a legal commencement instant no later than the first divergence", () => {
     for (const rule of rules) {
-      expect(rule.legalEffectiveInstant).not.toBe(rule.firstDivergenceInstant);
+      const legal = Date.parse(rule.legalEffectiveInstant);
+      const divergence = Date.parse(rule.firstDivergenceInstant);
+      expect(Number.isNaN(legal)).toBe(false);
+      expect(Number.isNaN(divergence)).toBe(false);
+      expect(legal).toBeLessThanOrEqual(divergence);
     }
   });
 

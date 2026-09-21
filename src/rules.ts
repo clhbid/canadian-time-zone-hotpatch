@@ -7,9 +7,11 @@
  * legislated offset.
  *
  * `legalEffectiveInstant` and `firstDivergenceInstant` are modeled separately:
- * the former is when the legislation formally took/takes effect, the latter
- * is the first wall-clock moment a seasonal transition is skipped (typically
- * the next scheduled "fall back").
+ * the former is the instant the legislated offset legally commences (comes
+ * into force — not the date of Royal Assent or a government announcement),
+ * the latter is the first wall-clock moment a seasonal transition is skipped
+ * (typically the next scheduled "fall back"). The two coincide where the
+ * legislation commences at that skipped transition.
  */
 import type { TimeZoneRule } from "./types.js";
 
@@ -23,11 +25,17 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     offset: "-06:00",
     fixedTimeZoneId: "Etc/GMT+6",
     labelKey: "ab-permanent-time-2026",
-    // Royal Assent of the Official Time Act.
-    legalEffectiveInstant: "2026-05-14T00:00:00-06:00",
+    // Permanent "Alberta Time" commences on November 1, 2026, when the final
+    // scheduled "fall back" is skipped; Royal Assent (May 14, 2026) only
+    // enacted the Official Time Act.
+    legalEffectiveInstant: "2026-11-01T02:00:00-06:00",
     // The next scheduled "fall back" is skipped; clocks stay at -06:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-06:00",
     citations: Object.freeze([
+      Object.freeze({
+        title: "Official Time Regulation (Alta. Reg. 136/2026)",
+        url: "https://open.alberta.ca/publications/official-time-regulation",
+      }),
       Object.freeze({
         title: "Alberta Is Set to Adopt Permanent Daylight Saving Time",
         url: "https://www.timeanddate.com/news/time/alberta-permanent-dst.html",
@@ -72,8 +80,10 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
     labelKey: "mb-permanent-time-2026",
-    // Manitoba government announcement of permanent daylight time.
-    legalEffectiveInstant: "2026-09-17T00:00:00-05:00",
+    // Permanent daylight time commences on November 1, 2026, when the final
+    // scheduled "fall back" is skipped; the September 17, 2026 announcement
+    // only set that commencement date.
+    legalEffectiveInstant: "2026-11-01T02:00:00-05:00",
     // The next scheduled "fall back" is skipped; clocks stay at -05:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00",
     citations: Object.freeze([

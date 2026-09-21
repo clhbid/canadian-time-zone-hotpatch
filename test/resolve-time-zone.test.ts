@@ -1,6 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { HostModule } from "./fixtures/simulated-host.js";
 import { UnknownTimeZoneError } from "../src/resolve.js";
 import { resolveTimeZone } from "../src/index.js";
+
+const hostState = vi.hoisted(() => ({ tzdata: "stale" as "stale" | "current" }));
+
+// The runner's own tzdata may or may not know about the 2026 Canadian rules,
+// so every host observation is served by a deterministic simulation instead.
+vi.mock("../src/host.js", async (importOriginal) => {
+  const actual = await importOriginal<HostModule>();
+  const { simulatedHostModule } = await import("./fixtures/simulated-host.js");
+  return simulatedHostModule(actual, hostState);
+});
+
+beforeEach(() => {
+  hostState.tzdata = "stale";
+});
 
 describe("resolveTimeZone", () => {
   it("returns the named zone and offset when current (pre-divergence)", () => {
@@ -23,6 +38,17 @@ describe("resolveTimeZone", () => {
     expect(result.timeZoneId).toBe("Etc/GMT+6");
     expect(result.offset).toBe("-06:00");
     expect(result.label).toBe("Alberta Time (ABT)");
+  });
+
+  it("keeps the canonical zone on a host whose tzdata already knows the rule", () => {
+    hostState.tzdata = "current";
+    const result = resolveTimeZone({
+      instant: "2026-11-02T12:00:00Z",
+      timeZoneId: "America/Edmonton",
+    });
+    expect(result.support.status).toBe("current");
+    expect(result.timeZoneId).toBe("America/Edmonton");
+    expect(result.offset).toBe("-06:00");
   });
 
   it.each([

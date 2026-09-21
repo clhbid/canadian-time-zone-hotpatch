@@ -46,7 +46,7 @@ export interface TimeZoneRule {
   readonly fixedTimeZoneId: string;
   /** Translation key used to look up the approved label for this rule. */
   readonly labelKey: string;
-  /** Instant the underlying legislation formally took/takes effect. */
+  /** Instant the legislated offset legally commences (comes into force). */
   readonly legalEffectiveInstant: string;
   /** First instant a legacy (seasonal) host and the rule disagree. */
   readonly firstDivergenceInstant: string;
@@ -83,7 +83,11 @@ export interface ResolveTimeZoneInput {
 }
 
 export interface ResolveLocalDateTimeInput {
-  /** ISO 8601 local date-time, without offset, e.g. `"2026-11-01T01:30:00"`. */
+  /**
+   * ISO 8601 local (wall-clock) date-time, e.g. `"2026-11-01T01:30:00"`. A
+   * UTC offset or `Z` designator is rejected, because a wall-clock time
+   * carries no offset of its own.
+   */
   readonly localDateTime: string;
   readonly timeZoneId: string;
   readonly disambiguation: Disambiguation;

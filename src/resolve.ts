@@ -4,6 +4,7 @@
  * same inspection logic from `inspectTimeZoneSupport`.
  */
 import { Temporal } from "./temporal.js";
+import { isKnownTimeZoneId, observeOffset } from "./host.js";
 import { findRule, normalizeTimeZoneId } from "./rules.js";
 import { resolveLabel } from "./translations.js";
 import type {
@@ -59,15 +60,32 @@ export function resolveTimeZone(
       ? rule.fixedTimeZoneId
       : normalizeTimeZoneId(input.timeZoneId);
 
-  const zoned = instant.toZonedDateTimeISO(effectiveTimeZoneId);
+  const offset = observeOffset(effectiveTimeZoneId, instant);
+  if (offset === undefined) {
+    throw new UnknownTimeZoneError(input.timeZoneId);
+  }
 
   return Object.freeze({
-    instant: zoned.toInstant().toString(),
+    instant: instant.toString(),
     timeZoneId: effectiveTimeZoneId,
-    offset: zoned.offset,
+    offset,
     label: labelFor(translations, fallbackLocale, support, input.locale),
     support,
   });
+}
+
+/** Matches a UTC offset or `Z` designator attached to the time part of an ISO string. */
+const OFFSET_BEARING = /[Tt ]\d{2}(?::?\d{2}){0,2}(?:[.,]\d+)?(?:[Zz]|[+-]\d{2}(?::?\d{2})?)/;
+
+/** Thrown when a local (wall-clock) date-time carries a UTC offset or `Z`. */
+export class OffsetBearingLocalDateTimeError extends RangeError {
+  constructor(localDateTime: string) {
+    super(
+      `Local date-time must not carry a UTC offset or "Z" designator: "${localDateTime}". ` +
+        `Use resolveTimeZone to resolve an instant.`,
+    );
+    this.name = "OffsetBearingLocalDateTimeError";
+  }
 }
 
 export function resolveLocalDateTime(
@@ -75,19 +93,27 @@ export function resolveLocalDateTime(
   fallbackLocale: string,
   input: ResolveLocalDateTimeInput,
 ): ResolvedLocalDateTime {
+  // `Temporal.PlainDateTime.from` silently discards any offset it is given,
+  // which would quietly reinterpret a supplied instant as wall time.
+  if (OFFSET_BEARING.test(input.localDateTime)) {
+    throw new OffsetBearingLocalDateTimeError(input.localDateTime);
+  }
+
   // Throws for malformed local date-times.
   const plain = Temporal.PlainDateTime.from(input.localDateTime);
 
   const rule = findRule(input.timeZoneId);
   const normalizedId = normalizeTimeZoneId(input.timeZoneId);
 
+  // Decide whether the identifier is usable *before* converting, so that a
+  // `RangeError` raised by `disambiguation: "reject"` is never mistaken for
+  // an unrecognized time zone.
+  if (!rule && !isKnownTimeZoneId(normalizedId)) {
+    throw new UnknownTimeZoneError(input.timeZoneId);
+  }
+
   if (!rule) {
-    let zoned;
-    try {
-      zoned = plain.toZonedDateTime(normalizedId, { disambiguation: input.disambiguation });
-    } catch {
-      throw new UnknownTimeZoneError(input.timeZoneId);
-    }
+    const zoned = plain.toZonedDateTime(normalizedId, { disambiguation: input.disambiguation });
     const support = inspectTimeZoneSupport({ timeZoneId: input.timeZoneId });
     return Object.freeze({
       instant: zoned.toInstant().toString(),
@@ -98,17 +124,22 @@ export function resolveLocalDateTime(
     });
   }
 
-  // Once the rule's first-divergence calendar date has arrived, the zone is
-  // a fixed, permanent offset for the entire day (and forever after): there
-  // is no ambiguous or nonexistent local time to disambiguate. Before that
-  // date, defer to the host's own (still-accurate) seasonal rules and
-  // disambiguation behaviour.
+  // Before the rule's first-divergence calendar date, the host's own seasonal
+  // rules are still accurate, so defer to them. On or after that date the
+  // host may be stale: probe it, and only substitute the rule's fixed,
+  // permanent offset when the host's data actually disagrees with the rule.
   const divergenceDate = Temporal.Instant.from(rule.firstDivergenceInstant)
-    .toZonedDateTimeISO(rule.canonicalTimeZoneId)
+    .toZonedDateTimeISO(rule.fixedTimeZoneId)
     .toPlainDate();
   const isBeforeDivergence = Temporal.PlainDate.compare(plain.toPlainDate(), divergenceDate) < 0;
 
-  const effectiveTimeZoneId = isBeforeDivergence ? rule.canonicalTimeZoneId : rule.fixedTimeZoneId;
+  // The unbiased, rule-owned probe answers the host-state question ("does
+  // this host know the rule?") independently of the wall time being resolved.
+  const hostKnowsRule =
+    isBeforeDivergence ||
+    inspectTimeZoneSupport({ timeZoneId: input.timeZoneId }).status !== "stale";
+  const effectiveTimeZoneId = hostKnowsRule ? rule.canonicalTimeZoneId : rule.fixedTimeZoneId;
+
   const zoned = plain.toZonedDateTime(effectiveTimeZoneId, {
     disambiguation: input.disambiguation,
   });

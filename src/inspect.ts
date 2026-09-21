@@ -3,29 +3,9 @@
  * comparing observed offsets — never by user-agent or version sniffing.
  */
 import { Temporal } from "./temporal.js";
+import { isKnownTimeZoneId, observeOffset } from "./host.js";
 import type { InspectTimeZoneSupportInput, TimeZoneSupport } from "./types.js";
 import { findRule, normalizeTimeZoneId } from "./rules.js";
-
-type TemporalInstant = ReturnType<typeof Temporal.Instant.from>;
-
-/** Offset the host reports for `timeZoneId` at `instant`, or `undefined` if invalid. */
-function tryObserveOffset(timeZoneId: string, instant: TemporalInstant): string | undefined {
-  try {
-    return instant.toZonedDateTimeISO(timeZoneId).offset;
-  } catch {
-    return undefined;
-  }
-}
-
-/** Validates that `timeZoneId` is a time zone identifier the host recognizes. */
-export function isKnownTimeZoneId(timeZoneId: string): boolean {
-  try {
-    Temporal.Now.zonedDateTimeISO(timeZoneId);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 export function inspectTimeZoneSupport(input: InspectTimeZoneSupportInput): TimeZoneSupport {
   const rule = findRule(input.timeZoneId);
@@ -47,7 +27,7 @@ export function inspectTimeZoneSupport(input: InspectTimeZoneSupportInput): Time
   const divergenceInstant = Temporal.Instant.from(rule.firstDivergenceInstant);
   const isAtOrAfterDivergence = Temporal.Instant.compare(probeInstant, divergenceInstant) >= 0;
 
-  const observedOffset = tryObserveOffset(rule.canonicalTimeZoneId, probeInstant);
+  const observedOffset = observeOffset(rule.canonicalTimeZoneId, probeInstant);
   if (observedOffset === undefined) {
     return Object.freeze({ status: "unknown", timeZoneId: normalizedId });
   }
