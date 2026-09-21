@@ -95,4 +95,24 @@ describe("translations", () => {
     );
     expect(label).toBe("Alberta Time (ABT)");
   });
+
+  it("tries requested locales in order", () => {
+    const label = resolveLabel(
+      defaultTranslations,
+      defaultFallbackLocale,
+      "ab-permanent-time-2026",
+      ["fr-CA", "en-CA"]
+    );
+    expect(label).toBe("Alberta Time (ABT)");
+  });
+
+  it("falls back when the requested locale is malformed", () => {
+    const label = resolveLabel(
+      defaultTranslations,
+      defaultFallbackLocale,
+      "ab-permanent-time-2026",
+      "not_a_locale"
+    );
+    expect(label).toBe("Alberta Time (ABT)");
+  });
 });

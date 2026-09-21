@@ -29,7 +29,7 @@ export function mergeTranslations(
   if (!overrides) {
     return base;
   }
-  const merged: Record<string, Record<string, string>> = {};
+  const merged: Record<string, Readonly<Partial<Record<RuleId, string>>>> = {};
   for (const locale of new Set([
     ...Object.keys(base),
     ...Object.keys(overrides)
@@ -37,7 +37,7 @@ export function mergeTranslations(
     merged[locale] = Object.freeze({
       ...base[locale],
       ...overrides[locale]
-    }) as Record<string, string>;
+    });
   }
   return Object.freeze(merged);
 }

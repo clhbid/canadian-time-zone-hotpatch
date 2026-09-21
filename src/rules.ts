@@ -95,7 +95,7 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
       })
     ])
   })
-]) as readonly TimeZoneRule[];
+]);
 
 /** Builds a lookup from every canonical id and alias to its owning rule. */
 function buildRuleIndex(): ReadonlyMap<string, TimeZoneRule> {
