@@ -73,17 +73,16 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
   }),
   Object.freeze({
     ruleId: "mb-permanent-time-2026",
-    ruleVersion: "1",
+    ruleVersion: "2",
     canonicalTimeZoneId: "America/Winnipeg",
     aliases: Object.freeze(["Canada/Central"]),
     jurisdiction: "Manitoba",
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
     labelKey: "mb-permanent-time-2026",
-    // The Official Time Amendment Act, 2025 establishes permanent daylight
-    // time; the permanent -05:00 offset first becomes operative when the
-    // November 1, 2026 "fall back" is skipped.
-    legalEffectiveInstant: "2026-11-01T02:00:00-05:00",
+    // Bill 223 commences on the scheduled March 8, 2026 "spring forward";
+    // legacy host data does not diverge until the later skipped "fall back".
+    legalEffectiveInstant: "2026-03-08T02:00:00-06:00",
     // The next scheduled "fall back" is skipped; clocks stay at -05:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00",
     citations: Object.freeze([
