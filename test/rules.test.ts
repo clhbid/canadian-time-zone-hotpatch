@@ -44,6 +44,11 @@ describe("rules", () => {
     },
   );
 
+  it("matches canonical ids and aliases case-insensitively", () => {
+    expect(findRule("america/edmonton")?.ruleId).toBe("ab-permanent-time-2026");
+    expect(normalizeTimeZoneId("canada/mountain")).toBe("America/Edmonton");
+  });
+
   it("normalizes aliases to their canonical id, and leaves unknown ids untouched", () => {
     expect(normalizeTimeZoneId("Canada/Mountain")).toBe("America/Edmonton");
     expect(normalizeTimeZoneId("America/Toronto")).toBe("America/Toronto");

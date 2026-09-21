@@ -80,16 +80,15 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
     labelKey: "mb-permanent-time-2026",
-    // Permanent daylight time commences on November 1, 2026, when the final
-    // scheduled "fall back" is skipped; the September 17, 2026 announcement
-    // only set that commencement date.
-    legalEffectiveInstant: "2026-11-01T02:00:00-05:00",
+    // The Official Time Amendment Act, 2025 fixes March 8, 2026 as the
+    // in-force date; divergence still waits until the skipped "fall back".
+    legalEffectiveInstant: "2026-03-08T00:00:00-06:00",
     // The next scheduled "fall back" is skipped; clocks stay at -05:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00",
     citations: Object.freeze([
       Object.freeze({
-        title: "Manitoba adopts permanent daylight time",
-        url: "https://www.cbc.ca/news/canada/manitoba/daylight-time-manitoba-9.7347844",
+        title: "The Official Time Amendment Act, 2025 (Bill 223)",
+        url: "https://web2.gov.mb.ca/bills/43-2/b223e.php",
       }),
       Object.freeze({
         title: "Manitoba Will Move to Permanent Daylight Time",
@@ -103,9 +102,9 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
 function buildRuleIndex(): ReadonlyMap<string, TimeZoneRule> {
   const index = new Map<string, TimeZoneRule>();
   for (const rule of rules) {
-    index.set(rule.canonicalTimeZoneId, rule);
+    index.set(normalizeLookupKey(rule.canonicalTimeZoneId), rule);
     for (const alias of rule.aliases) {
-      index.set(alias, rule);
+      index.set(normalizeLookupKey(alias), rule);
     }
   }
   return index;
@@ -115,11 +114,15 @@ const ruleIndex = buildRuleIndex();
 
 /** Looks up the rule governing `timeZoneId` (canonical id or known alias). */
 export function findRule(timeZoneId: string): TimeZoneRule | undefined {
-  return ruleIndex.get(timeZoneId);
+  return ruleIndex.get(normalizeLookupKey(timeZoneId));
 }
 
 /** Normalizes a known alias to its canonical time zone identifier. */
 export function normalizeTimeZoneId(timeZoneId: string): string {
   const rule = findRule(timeZoneId);
   return rule ? rule.canonicalTimeZoneId : timeZoneId;
+}
+
+function normalizeLookupKey(timeZoneId: string): string {
+  return timeZoneId.toLowerCase();
 }
