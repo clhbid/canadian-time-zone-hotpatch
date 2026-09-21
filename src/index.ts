@@ -1,5 +1,19 @@
 /**
- * The public API is added by the inspection and resolution slices tracked
- * under issue #1. This foundation slice intentionally exposes no plumbing.
+ * `@clhbid/canadian-time-zone-hotpatch`
+ *
+ * A side-effect-free Temporal adapter that detects stale Canadian
+ * permanent-time zone data without patching Temporal or Intl globally. See
+ * the README for the interface, rule sources, and limitations.
  */
-export {};
+export { createTimeZoneHotpatch, defaultConfig } from "./config.js";
+export { inspectTimeZoneSupport } from "./inspect.js";
+export type {
+  HotpatchConfig,
+  InspectTimeZoneSupportInput,
+  RuleId,
+  TimeZoneHotpatch,
+  TimeZoneRule,
+  TimeZoneSupport,
+  TimeZoneSupportStatus,
+  TranslationDictionary
+} from "./types.js";
