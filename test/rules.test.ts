@@ -34,19 +34,20 @@ describe("rules", () => {
   it.each([
     ["America/Edmonton", "-06:00", "Etc/GMT+6"],
     ["America/Vancouver", "-07:00", "Etc/GMT+7"],
-    ["America/Winnipeg", "-05:00", "Etc/GMT+5"],
+    ["America/Winnipeg", "-05:00", "Etc/GMT+5"]
   ])(
     "governs %s with permanent offset %s via %s",
     (canonicalTimeZoneId, offset, fixedTimeZoneId) => {
       const rule = findRule(canonicalTimeZoneId);
       expect(rule?.offset).toBe(offset);
       expect(rule?.fixedTimeZoneId).toBe(fixedTimeZoneId);
-    },
+    }
   );
 
   it("records the British Columbia rule as legally effective on March 9, 2026", () => {
-    expect(findRule("America/Vancouver")?.ruleVersion).toBe("2");
-    expect(findRule("America/Vancouver")?.legalEffectiveInstant).toBe("2026-03-09T00:00:00-07:00");
+    expect(findRule("America/Vancouver")?.legalEffectiveInstant).toBe(
+      "2026-03-09T00:00:00-07:00"
+    );
   });
 
   it("matches canonical ids and aliases case-insensitively", () => {

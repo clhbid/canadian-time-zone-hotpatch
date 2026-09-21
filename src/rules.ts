@@ -18,13 +18,11 @@ import type { TimeZoneRule } from "./types.js";
 export const rules: readonly TimeZoneRule[] = Object.freeze([
   Object.freeze({
     ruleId: "ab-permanent-time-2026",
-    ruleVersion: "1",
     canonicalTimeZoneId: "America/Edmonton",
     aliases: Object.freeze(["Canada/Mountain"]),
     jurisdiction: "Alberta",
     offset: "-06:00",
     fixedTimeZoneId: "Etc/GMT+6",
-    labelKey: "ab-permanent-time-2026",
     // Permanent "Alberta Time" commences on November 1, 2026, when the final
     // scheduled "fall back" is skipped; Royal Assent (May 14, 2026) only
     // enacted the Official Time Act.
@@ -34,27 +32,25 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     citations: Object.freeze([
       Object.freeze({
         title: "Official Time Regulation (Alta. Reg. 136/2026)",
-        url: "https://open.alberta.ca/publications/official-time-regulation",
+        url: "https://open.alberta.ca/publications/official-time-regulation"
       }),
       Object.freeze({
         title: "Alberta Is Set to Adopt Permanent Daylight Saving Time",
-        url: "https://www.timeanddate.com/news/time/alberta-permanent-dst.html",
+        url: "https://www.timeanddate.com/news/time/alberta-permanent-dst.html"
       }),
       Object.freeze({
         title: "Alberta Time Is Official: Bill 31 Ends Clock Changes",
-        url: "https://www.culturealberta.com/articles/alberta-time-is-official-bill-31-ends-clock-changes-for-good-in-alberta",
-      }),
-    ]),
+        url: "https://www.culturealberta.com/articles/alberta-time-is-official-bill-31-ends-clock-changes-for-good-in-alberta"
+      })
+    ])
   }),
   Object.freeze({
     ruleId: "bc-permanent-time-2026",
-    ruleVersion: "2",
     canonicalTimeZoneId: "America/Vancouver",
     aliases: Object.freeze(["Canada/Pacific"]),
     jurisdiction: "British Columbia",
     offset: "-07:00",
     fixedTimeZoneId: "Etc/GMT+7",
-    labelKey: "bc-permanent-time-2026",
     // Order in Council 63/2026 brings the Interpretation Amendment Act into
     // force at the start of March 9, 2026 in B.C.'s new UTC-7 Pacific time.
     legalEffectiveInstant: "2026-03-09T00:00:00-07:00",
@@ -63,27 +59,25 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     citations: Object.freeze([
       Object.freeze({
         title: "Order in Council No. 63/2026",
-        url: "https://www.bclaws.gov.bc.ca/civix/document/id/oic/oic_cur/0063_2026",
+        url: "https://www.bclaws.gov.bc.ca/civix/document/id/oic/oic_cur/0063_2026"
       }),
       Object.freeze({
         title: "British Columbia (BC) Adopts Permanent Daylight Saving Time",
-        url: "https://www.timeanddate.com/news/time/canada-bc-permanent-dst.html",
+        url: "https://www.timeanddate.com/news/time/canada-bc-permanent-dst.html"
       }),
       Object.freeze({
         title: "Permanent daylight saving time — Province of British Columbia",
-        url: "https://www2.gov.bc.ca/gov/content/governments/celebrating-british-columbia/daylight-saving-time",
-      }),
-    ]),
+        url: "https://www2.gov.bc.ca/gov/content/governments/celebrating-british-columbia/daylight-saving-time"
+      })
+    ])
   }),
   Object.freeze({
     ruleId: "mb-permanent-time-2026",
-    ruleVersion: "2",
     canonicalTimeZoneId: "America/Winnipeg",
     aliases: Object.freeze(["Canada/Central"]),
     jurisdiction: "Manitoba",
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
-    labelKey: "mb-permanent-time-2026",
     // Bill 223 commences on the scheduled March 8, 2026 "spring forward";
     // legacy host data does not diverge until the later skipped "fall back".
     legalEffectiveInstant: "2026-03-08T02:00:00-06:00",
@@ -92,14 +86,14 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     citations: Object.freeze([
       Object.freeze({
         title: "The Official Time Amendment Act, 2025 (Bill 223)",
-        url: "https://web2.gov.mb.ca/bills/43-2/b223e.php",
+        url: "https://web2.gov.mb.ca/bills/43-2/b223e.php"
       }),
       Object.freeze({
         title: "Manitoba Will Move to Permanent Daylight Time",
-        url: "https://news.gov.mb.ca/news/?item=75397",
-      }),
-    ]),
-  }),
+        url: "https://news.gov.mb.ca/news/?item=75397"
+      })
+    ])
+  })
 ]) as readonly TimeZoneRule[];
 
 /** Builds a lookup from every canonical id and alias to its owning rule. */

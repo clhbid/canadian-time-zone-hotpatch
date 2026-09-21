@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import { Temporal as PolyfillTemporal } from "temporal-polyfill";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 describe("temporal selection", () => {
   afterEach(() => {
@@ -10,7 +10,7 @@ describe("temporal selection", () => {
   it("prefers a global Temporal implementation when one is already available", async () => {
     const globalTemporal = {
       Instant: { from: vi.fn() },
-      ZonedDateTime: class ZonedDateTime {},
+      ZonedDateTime: class ZonedDateTime {}
     };
 
     vi.stubGlobal("Temporal", globalTemporal);

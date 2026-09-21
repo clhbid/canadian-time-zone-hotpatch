@@ -11,8 +11,8 @@ export const defaultTranslations: TranslationDictionary = Object.freeze({
   "en-CA": Object.freeze({
     "ab-permanent-time-2026": "Alberta Time (ABT)",
     "bc-permanent-time-2026": "Pacific Time (PCT)",
-    "mb-permanent-time-2026": "Manitoba Time (MBT)",
-  }),
+    "mb-permanent-time-2026": "Manitoba Time (MBT)"
+  })
 });
 
 /** Fallback locale used when a requested locale has no translations. */
@@ -24,16 +24,19 @@ export const defaultFallbackLocale = "en-CA";
  */
 export function mergeTranslations(
   base: TranslationDictionary,
-  overrides: TranslationDictionary | undefined,
+  overrides: TranslationDictionary | undefined
 ): TranslationDictionary {
   if (!overrides) {
     return base;
   }
   const merged: Record<string, Record<string, string>> = {};
-  for (const locale of new Set([...Object.keys(base), ...Object.keys(overrides)])) {
+  for (const locale of new Set([
+    ...Object.keys(base),
+    ...Object.keys(overrides)
+  ])) {
     merged[locale] = Object.freeze({
       ...base[locale],
-      ...overrides[locale],
+      ...overrides[locale]
     }) as Record<string, string>;
   }
   return Object.freeze(merged);
@@ -47,7 +50,7 @@ export function resolveLabel(
   translations: TranslationDictionary,
   fallbackLocale: string,
   ruleId: string,
-  locale?: Intl.LocalesArgument,
+  locale?: Intl.LocalesArgument
 ): string {
   for (const candidate of localeCandidates(locale, fallbackLocale)) {
     const label = translations[candidate]?.[ruleId];
@@ -60,13 +63,15 @@ export function resolveLabel(
 
 function localeCandidates(
   locale: Intl.LocalesArgument | undefined,
-  fallbackLocale: string,
+  fallbackLocale: string
 ): string[] {
   const requested = normalizeLocaleArgument(locale);
   return [...requested, ...normalizeLocaleArgument(fallbackLocale)];
 }
 
-function normalizeLocaleArgument(locale: Intl.LocalesArgument | undefined): string[] {
+function normalizeLocaleArgument(
+  locale: Intl.LocalesArgument | undefined
+): string[] {
   if (!locale) {
     return [];
   }

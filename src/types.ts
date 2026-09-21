@@ -1,8 +1,8 @@
 /**
- * Public types for `@clhbid/canadian-time-zone-hotpatch`.
+ * Internal domain types shared by the package's delivery slices.
  */
 
-/** Temporal's own disambiguation modes, re-exported for input typing. */
+/** Temporal's disambiguation modes for local date-time input. */
 export type Disambiguation = "compatible" | "earlier" | "later" | "reject";
 
 /**
@@ -17,7 +17,8 @@ export type Disambiguation = "compatible" | "earlier" | "later" | "reject";
  * - `unknown` — the identifier could not be recognized as a valid time zone
  *   at all.
  */
-export type TimeZoneSupportStatus = "current" | "stale" | "not_applicable" | "unknown";
+export type TimeZoneSupportStatus =
+  "current" | "stale" | "not_applicable" | "unknown";
 
 /** A source citation backing a rule's effective and divergence instants. */
 export interface RuleCitation {
@@ -25,15 +26,10 @@ export interface RuleCitation {
   readonly url: string;
 }
 
-/**
- * A single, versioned correction rule for a Canadian time zone that has
- * moved (or is moving) to a permanent, non-seasonal UTC offset.
- */
+/** A correction rule for a Canadian time zone moving to a permanent UTC offset. */
 export interface TimeZoneRule {
-  /** Stable identifier for this rule, independent of its version. */
+  /** Stable identifier for this rule. */
   readonly ruleId: string;
-  /** Version of this specific rule's data (bumped when instants/offset change). */
-  readonly ruleVersion: string;
   /** Canonical IANA time zone identifier this rule governs. */
   readonly canonicalTimeZoneId: string;
   /** Recognized IANA aliases/links that normalize to `canonicalTimeZoneId`. */
@@ -44,8 +40,6 @@ export interface TimeZoneRule {
   readonly offset: string;
   /** Fixed-offset `Etc/GMT` zone equivalent to `offset`, used for correction. */
   readonly fixedTimeZoneId: string;
-  /** Translation key used to look up the approved label for this rule. */
-  readonly labelKey: string;
   /** Instant the legislated offset legally commences (comes into force). */
   readonly legalEffectiveInstant: string;
   /** First instant a legacy (seasonal) host and the rule disagree. */
@@ -60,7 +54,6 @@ export interface TimeZoneSupport {
   /** The normalized (alias-resolved) time zone identifier that was inspected. */
   readonly timeZoneId: string;
   readonly ruleId?: string;
-  readonly ruleVersion?: string;
   /** Offset the rule mandates at the probed instant, e.g. `"-06:00"`. */
   readonly expectedOffset?: string;
   /** Offset the host actually reports at the probed instant. */
@@ -114,7 +107,9 @@ export interface ResolvedLocalDateTime {
 }
 
 /** A locale-keyed dictionary of rule-id-keyed labels. */
-export type TranslationDictionary = Readonly<Record<string, Readonly<Record<string, string>>>>;
+export type TranslationDictionary = Readonly<
+  Record<string, Readonly<Record<string, string>>>
+>;
 
 export interface HotpatchConfig {
   readonly rules: readonly TimeZoneRule[];
