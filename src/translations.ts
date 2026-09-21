@@ -79,9 +79,11 @@ function normalizeLocaleArgument(
     typeof locale === "string" || locale instanceof Intl.Locale
       ? [String(locale)]
       : Array.from(locale, (entry) => String(entry));
-  try {
-    return Intl.getCanonicalLocales(values);
-  } catch {
-    return values;
-  }
+  return values.flatMap((value) => {
+    try {
+      return Intl.getCanonicalLocales(value);
+    } catch {
+      return [];
+    }
+  });
 }

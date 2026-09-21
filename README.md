@@ -8,7 +8,7 @@ exported by later delivery slices.
 
 ## Development
 
-Requires Node.js 20 or newer.
+Requires Node.js 22.13 or newer.
 
 ```bash
 npm install

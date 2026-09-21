@@ -115,4 +115,17 @@ describe("translations", () => {
     );
     expect(label).toBe("Alberta Time (ABT)");
   });
+
+  it("ignores malformed requested locales without discarding later valid locales", () => {
+    const label = resolveLabel(
+      {
+        ...defaultTranslations,
+        "fr-CA": { "ab-permanent-time-2026": "Heure de l'Alberta" }
+      },
+      defaultFallbackLocale,
+      "ab-permanent-time-2026",
+      ["not_a_locale", "fr-ca"]
+    );
+    expect(label).toBe("Heure de l'Alberta");
+  });
 });
