@@ -5,7 +5,7 @@
  * add or override *labels* — it cannot alter offset rules, which are owned
  * exclusively by {@link rules}.
  */
-import type { TranslationDictionary } from "./types.js";
+import type { RuleId, TranslationDictionary } from "./types.js";
 
 export const defaultTranslations: TranslationDictionary = Object.freeze({
   "en-CA": Object.freeze({
@@ -49,7 +49,7 @@ export function mergeTranslations(
 export function resolveLabel(
   translations: TranslationDictionary,
   fallbackLocale: string,
-  ruleId: string,
+  ruleId: RuleId,
   locale?: Intl.LocalesArgument
 ): string {
   for (const candidate of localeCandidates(locale, fallbackLocale)) {

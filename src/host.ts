@@ -5,7 +5,7 @@
  * behaviour (stale or current tzdata) can be simulated deterministically in
  * tests instead of depending on the test runner's installed tzdata.
  */
-import { Temporal } from "./temporal.js";
+import type { Temporal } from "./temporal.js";
 
 export type HostInstant = ReturnType<typeof Temporal.Instant.from>;
 
@@ -18,15 +18,5 @@ export function observeOffset(
     return instant.toZonedDateTimeISO(timeZoneId).offset;
   } catch {
     return undefined;
-  }
-}
-
-/** Validates that `timeZoneId` is a time zone identifier the host recognizes. */
-export function isKnownTimeZoneId(timeZoneId: string): boolean {
-  try {
-    Temporal.Now.zonedDateTimeISO(timeZoneId);
-    return true;
-  } catch {
-    return false;
   }
 }

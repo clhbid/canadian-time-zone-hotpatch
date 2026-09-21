@@ -78,12 +78,12 @@ describe("translations", () => {
 
   it("falls back to the bare rule id when no label exists anywhere", () => {
     const label = resolveLabel(
-      defaultTranslations,
+      {},
       defaultFallbackLocale,
-      "unknown-rule",
+      "ab-permanent-time-2026",
       "en-CA"
     );
-    expect(label).toBe("unknown-rule");
+    expect(label).toBe("ab-permanent-time-2026");
   });
 
   it("accepts an Intl.Locale instance", () => {

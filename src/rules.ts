@@ -23,16 +23,19 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     jurisdiction: "Alberta",
     offset: "-06:00",
     fixedTimeZoneId: "Etc/GMT+6",
-    // Permanent "Alberta Time" commences on November 1, 2026, when the final
-    // scheduled "fall back" is skipped; Royal Assent (May 14, 2026) only
-    // enacted the Official Time Act.
-    legalEffectiveInstant: "2026-11-01T02:00:00-06:00",
+    // Order in Council 204/2026 proclaimed the Official Time Act in force on
+    // June 18. The Act fixes official time at UTC-6.
+    legalEffectiveInstant: "2026-06-18T00:00:00-06:00",
     // The next scheduled "fall back" is skipped; clocks stay at -06:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-06:00",
     citations: Object.freeze([
       Object.freeze({
-        title: "Official Time Regulation (Alta. Reg. 136/2026)",
-        url: "https://open.alberta.ca/publications/official-time-regulation"
+        title: "Order in Council 204/2026",
+        url: "https://kings-printer.alberta.ca/Documents/Orders/Orders_in_Council/2026/2026_204.html"
+      }),
+      Object.freeze({
+        title: "Official Time Act",
+        url: "https://www.canlii.org/en/ab/laws/stat/rsa-2000-c-o-5.7/latest/rsa-2000-c-o-5.7.html"
       }),
       Object.freeze({
         title: "Alberta Is Set to Adopt Permanent Daylight Saving Time",
@@ -78,9 +81,9 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     jurisdiction: "Manitoba",
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
-    // Bill 223 commences on the scheduled March 8, 2026 "spring forward";
-    // legacy host data does not diverge until the later skipped "fall back".
-    legalEffectiveInstant: "2026-03-08T02:00:00-06:00",
+    // Bill 223 commences at the start of March 8, 2026; legacy host data does
+    // not permanently diverge until the later skipped "fall back".
+    legalEffectiveInstant: "2026-03-08T00:00:00-06:00",
     // The next scheduled "fall back" is skipped; clocks stay at -05:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00",
     citations: Object.freeze([

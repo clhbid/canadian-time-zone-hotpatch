@@ -50,13 +50,25 @@ describe("rules", () => {
     );
   });
 
-  it("matches canonical ids and aliases case-insensitively", () => {
-    expect(findRule("america/edmonton")?.ruleId).toBe("ab-permanent-time-2026");
-    expect(normalizeTimeZoneId("canada/mountain")).toBe("America/Edmonton");
-  });
+  it.each([
+    ["america/edmonton", "canada/mountain", "America/Edmonton"],
+    ["america/vancouver", "canada/pacific", "America/Vancouver"],
+    ["america/winnipeg", "canada/central", "America/Winnipeg"]
+  ])(
+    "matches %s and its alias %s case-insensitively",
+    (canonicalTimeZoneId, alias, expected) => {
+      expect(normalizeTimeZoneId(canonicalTimeZoneId)).toBe(expected);
+      expect(normalizeTimeZoneId(alias)).toBe(expected);
+    }
+  );
 
-  it("normalizes aliases to their canonical id, and leaves unknown ids untouched", () => {
-    expect(normalizeTimeZoneId("Canada/Mountain")).toBe("America/Edmonton");
-    expect(normalizeTimeZoneId("America/Toronto")).toBe("America/Toronto");
+  it.each([
+    "America/Creston",
+    "America/Dawson_Creek",
+    "America/Fort_Nelson",
+    "America/Toronto"
+  ])("does not govern unaffected zone %s", (timeZoneId) => {
+    expect(findRule(timeZoneId)).toBeUndefined();
+    expect(normalizeTimeZoneId(timeZoneId)).toBe(timeZoneId);
   });
 });
