@@ -80,9 +80,10 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
     labelKey: "mb-permanent-time-2026",
-    // The Official Time Amendment Act, 2025 fixes March 8, 2026 as the
-    // in-force date; Manitoba's official time change still occurs at 2 a.m.
-    legalEffectiveInstant: "2026-03-08T02:00:00-06:00",
+    // The Official Time Amendment Act, 2025 establishes permanent daylight
+    // time; the permanent -05:00 offset first becomes operative when the
+    // November 1, 2026 "fall back" is skipped.
+    legalEffectiveInstant: "2026-11-01T02:00:00-05:00",
     // The next scheduled "fall back" is skipped; clocks stay at -05:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00",
     citations: Object.freeze([
@@ -91,8 +92,8 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
         url: "https://web2.gov.mb.ca/bills/43-2/b223e.php",
       }),
       Object.freeze({
-        title: "Daylight Time Starts March 8",
-        url: "https://news.gov.mb.ca/news/index.html?item=73040",
+        title: "Manitoba Will Move to Permanent Daylight Time",
+        url: "https://news.gov.mb.ca/news/?item=75397",
       }),
     ]),
   }),
