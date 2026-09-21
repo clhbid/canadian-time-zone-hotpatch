@@ -48,19 +48,23 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
   }),
   Object.freeze({
     ruleId: "bc-permanent-time-2026",
-    ruleVersion: "1",
+    ruleVersion: "2",
     canonicalTimeZoneId: "America/Vancouver",
     aliases: Object.freeze(["Canada/Pacific"]),
     jurisdiction: "British Columbia",
     offset: "-07:00",
     fixedTimeZoneId: "Etc/GMT+7",
     labelKey: "bc-permanent-time-2026",
-    // Interpretation Amendment Act provision entering into force at the last
-    // seasonal "spring forward".
-    legalEffectiveInstant: "2026-03-08T02:00:00-08:00",
+    // Order in Council 63/2026 brings the Interpretation Amendment Act into
+    // force at the start of March 9, 2026 in B.C.'s new UTC-7 Pacific time.
+    legalEffectiveInstant: "2026-03-09T00:00:00-07:00",
     // The next scheduled "fall back" is skipped; clocks stay at -07:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-07:00",
     citations: Object.freeze([
+      Object.freeze({
+        title: "Order in Council No. 63/2026",
+        url: "https://www.bclaws.gov.bc.ca/civix/document/id/oic/oic_cur/0063_2026",
+      }),
       Object.freeze({
         title: "British Columbia (BC) Adopts Permanent Daylight Saving Time",
         url: "https://www.timeanddate.com/news/time/canada-bc-permanent-dst.html",

@@ -47,6 +47,24 @@ describe("translations", () => {
     expect(label).toBe("Alberta Time (ABT)");
   });
 
+  it("canonicalizes requested locale casing before lookup", () => {
+    const label = resolveLabel(
+      {
+        ...defaultTranslations,
+        "fr-CA": { "ab-permanent-time-2026": "Heure de l'Alberta" },
+      },
+      defaultFallbackLocale,
+      "ab-permanent-time-2026",
+      "fr-ca",
+    );
+    expect(label).toBe("Heure de l'Alberta");
+  });
+
+  it("canonicalizes fallback locale casing before lookup", () => {
+    const label = resolveLabel(defaultTranslations, "en-ca", "ab-permanent-time-2026", "ja-jp");
+    expect(label).toBe("Alberta Time (ABT)");
+  });
+
   it("falls back to the bare rule id when no label exists anywhere", () => {
     const label = resolveLabel(defaultTranslations, defaultFallbackLocale, "unknown-rule", "en-CA");
     expect(label).toBe("unknown-rule");

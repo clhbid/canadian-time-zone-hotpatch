@@ -44,6 +44,11 @@ describe("rules", () => {
     },
   );
 
+  it("records the British Columbia rule as legally effective on March 9, 2026", () => {
+    expect(findRule("America/Vancouver")?.ruleVersion).toBe("2");
+    expect(findRule("America/Vancouver")?.legalEffectiveInstant).toBe("2026-03-09T00:00:00-07:00");
+  });
+
   it("matches canonical ids and aliases case-insensitively", () => {
     expect(findRule("america/edmonton")?.ruleId).toBe("ab-permanent-time-2026");
     expect(normalizeTimeZoneId("canada/mountain")).toBe("America/Edmonton");

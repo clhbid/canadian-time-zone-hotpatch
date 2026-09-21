@@ -63,15 +63,20 @@ function localeCandidates(
   fallbackLocale: string,
 ): string[] {
   const requested = normalizeLocaleArgument(locale);
-  return [...requested, fallbackLocale];
+  return [...requested, ...normalizeLocaleArgument(fallbackLocale)];
 }
 
 function normalizeLocaleArgument(locale: Intl.LocalesArgument | undefined): string[] {
   if (!locale) {
     return [];
   }
-  if (typeof locale === "string" || locale instanceof Intl.Locale) {
-    return [String(locale)];
+  const values =
+    typeof locale === "string" || locale instanceof Intl.Locale
+      ? [String(locale)]
+      : Array.from(locale, (entry) => String(entry));
+  try {
+    return Intl.getCanonicalLocales(values);
+  } catch {
+    return values;
   }
-  return Array.from(locale, (entry) => String(entry));
 }
