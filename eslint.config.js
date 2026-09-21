@@ -1,5 +1,6 @@
 // @ts-check
 import js from "@eslint/js";
+import prettier from "eslint-plugin-prettier/recommended";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
@@ -9,8 +10,17 @@ export default tseslint.config(
   {
     files: ["**/*.ts"],
     rules: {
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      "@typescript-eslint/consistent-type-imports": "error",
-    },
+      // Match clhbid.com: TypeScript catches unused locals without the v8
+      // eslint rule's false positives.
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        {
+          prefer: "type-imports",
+          fixStyle: "separate-type-imports"
+        }
+      ]
+    }
   },
+  prettier
 );

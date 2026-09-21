@@ -10,7 +10,10 @@ import { Temporal } from "./temporal.js";
 export type HostInstant = ReturnType<typeof Temporal.Instant.from>;
 
 /** Offset the host reports for `timeZoneId` at `instant`, or `undefined` if invalid. */
-export function observeOffset(timeZoneId: string, instant: HostInstant): string | undefined {
+export function observeOffset(
+  timeZoneId: string,
+  instant: HostInstant
+): string | undefined {
   try {
     return instant.toZonedDateTimeISO(timeZoneId).offset;
   } catch {

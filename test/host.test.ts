@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { observeOffset, isKnownTimeZoneId } from "../src/host.js";
 import { Temporal } from "temporal-polyfill";
+import { describe, expect, it } from "vitest";
+import { isKnownTimeZoneId, observeOffset } from "../src/host.js";
 
 describe("host helpers", () => {
   it("observes the host offset for a recognized time zone", () => {

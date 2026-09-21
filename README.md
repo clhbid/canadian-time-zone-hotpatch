@@ -2,47 +2,9 @@
 
 A side-effect-free Temporal adapter for correcting stale Canadian timezone data.
 
-## Install
-
-```bash
-npm install @clhbid/canadian-time-zone-hotpatch
-```
-
-## Public API
-
-The package currently exports:
-
-- `rules` — immutable, source-cited rule data for governed zones
-- `normalizeTimeZoneId(timeZoneId)` — resolves known aliases to canonical IANA ids
-- `observeOffset(timeZoneId, instant)` — reads the host-reported offset for an instant
-- `isKnownTimeZoneId(timeZoneId)` — checks whether the host recognizes a zone id
-- `defaultTranslations`, `defaultFallbackLocale`, and `mergeTranslations(...)`
-
-## Usage
-
-```ts
-import {
-  isKnownTimeZoneId,
-  normalizeTimeZoneId,
-  observeOffset,
-  rules,
-} from "@clhbid/canadian-time-zone-hotpatch";
-import { Temporal } from "temporal-polyfill";
-
-const timeZoneId = normalizeTimeZoneId("Canada/Mountain");
-const instant = Temporal.Instant.from("2026-11-01T09:00:00Z");
-
-if (isKnownTimeZoneId(timeZoneId)) {
-  const hostOffset = observeOffset(timeZoneId, instant);
-  const rule = rules.find((entry) => entry.canonicalTimeZoneId === timeZoneId);
-}
-```
-
-## Limitations
-
-- Version `0.1.0` ships rule data and host-observation helpers only.
-- Runtime inspection and automatic correction APIs are tracked separately under issue `#1`.
-- The packaged translations include `en-CA` labels only; callers may layer additional labels with `mergeTranslations`.
+This branch establishes the package toolchain and internal rule data. It intentionally has no
+public API yet. The inspection and resolution interface is defined in issue `#1` and will be
+exported by later delivery slices.
 
 ## Rule sources
 
@@ -52,7 +14,8 @@ The bundled rules currently cover:
 - British Columbia — `America/Vancouver` / `Canada/Pacific`
 - Manitoba — `America/Winnipeg` / `Canada/Central`
 
-Each exported rule includes its own source citations in `rule.citations`, including the enacted Manitoba legal source used for its commencement date.
+Each internal rule records its source citations, including the enacted Manitoba legal source used
+for its commencement date.
 
 ## Agent skills
 

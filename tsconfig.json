@@ -5,16 +5,16 @@
     "moduleResolution": "NodeNext",
     "lib": ["ES2022"],
     "strict": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "esModuleInterop": true,
+    "noEmit": true,
+    "verbatimModuleSyntax": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "noUnusedLocals": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
-    "outDir": "dist"
+    "outDir": "dist",
+    "types": ["node"]
   },
   "include": ["src", "test"]
 }

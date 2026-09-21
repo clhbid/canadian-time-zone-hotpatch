@@ -23,4 +23,5 @@ function readGlobalTemporal(): TemporalNamespace | undefined {
   return undefined;
 }
 
-export const Temporal: TemporalNamespace = readGlobalTemporal() ?? PolyfillTemporal;
+export const Temporal: TemporalNamespace =
+  readGlobalTemporal() ?? PolyfillTemporal;
