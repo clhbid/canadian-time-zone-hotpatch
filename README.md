@@ -120,7 +120,10 @@ the shipped signatures and behavioural detail. In brief, the top-level functions
 `globalThis.Temporal` per call; `createHotpatch({ temporal })` validates a supplied
 implementation eagerly at construction time and otherwise defers to the global path; and calls
 may throw `MissingTemporalError`, `UnknownTimeZoneError`, `OffsetBearingWallTimeError`, or
-Temporal's own `RangeError`.
+Temporal's own `RangeError`. Both correction functions return a frozen `CorrectedZonedTime` with
+the corrected `instant`, effective `timeZoneId`, `offset`, optional `label`, and a `support`
+classification. `support.status` is `current`, `stale`, `not_applicable`, or `unknown`; governed
+`current` and `stale` results also carry the canonical zone and `ruleId`.
 
 ## Governed rules
 
