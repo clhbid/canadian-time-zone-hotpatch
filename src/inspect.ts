@@ -39,10 +39,7 @@ export function inspectTimeZoneSupport(
   if (observedOffset === undefined) {
     // The package knows the zone but this host does not, so its support
     // cannot be classified.
-    return Object.freeze({
-      status: "unknown",
-      timeZoneId: rule.canonicalTimeZoneId
-    });
+    return Object.freeze({ status: "unknown", timeZoneId: input.timeZoneId });
   }
 
   // Before first divergence a seasonal host is still correct by definition,

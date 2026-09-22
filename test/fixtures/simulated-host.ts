@@ -124,6 +124,11 @@ export function simulatedHostModule(
 ): HostModule {
   return {
     ...actual,
+    isKnownTimeZoneId(timeZoneId) {
+      return (
+        timeZoneId in seasonalZones || actual.isKnownTimeZoneId(timeZoneId)
+      );
+    },
     observeOffset(timeZoneId, instant) {
       return (
         simulateHostOffset(
