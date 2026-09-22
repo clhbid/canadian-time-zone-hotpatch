@@ -36,6 +36,16 @@ for instance — and either install it globally with its `/global` entry point o
 `createHotpatch`, as [Supplying a Temporal implementation](#supplying-a-temporal-implementation)
 shows.
 
+### Verifying this package
+
+Releases are published from CI with
+[provenance](https://docs.npmjs.com/generating-provenance-statements), so the tarball on the
+registry is attested to the commit and the workflow that built it. To check what you installed:
+
+```bash
+npm audit signatures
+```
+
 ## Usage
 
 The examples in this section are typechecked by `test/readme.test.ts`.

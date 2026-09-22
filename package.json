@@ -1,6 +1,6 @@
 {
   "name": "@clhbid/canadian-time-zone-hotpatch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A side-effect-free Temporal adapter that detects and corrects stale Canadian permanent-time zone data (Alberta, British Columbia, Manitoba) without patching Temporal or Intl globally.",
   "keywords": [
     "temporal",
