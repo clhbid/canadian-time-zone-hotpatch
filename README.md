@@ -18,6 +18,12 @@ implementations, or tzdata versions.
 npm install @clhbid/canadian-time-zone-hotpatch
 ```
 
+This package is pre-1.0 and its interface is not yet settled: it may change in a minor version
+while the rules and the correction behaviour are validated against production traffic. Pin an
+exact version if that matters to you, and read the release notes before upgrading. Once the
+interface has held up in production it ships as 1.0, and follows semantic versioning strictly
+from there.
+
 Requires Node.js 22.13 or newer, or a browser, **and a compatible `Temporal` implementation**.
 This package ships none: it reads `globalThis.Temporal` when the host has one, and otherwise the
 one you pass to `createHotpatch`. Whether to polyfill `Temporal` is your application's decision —
