@@ -24,9 +24,19 @@ export type HostModule = typeof hostModule;
 /** Whether the simulated host's tzdata predates (`stale`) or knows (`current`) the rules. */
 export type SimulatedTzdata = "stale" | "current";
 
-/** Mutable holder letting a test switch the simulated tzdata per case. */
+/** Mutable holder letting a test switch the simulated tzdata per case; a record keys it per zone. */
 export interface SimulatedHostState {
-  tzdata: SimulatedTzdata;
+  tzdata: SimulatedTzdata | Readonly<Record<string, SimulatedTzdata>>;
+}
+
+/** Tzdata `state` simulates for `timeZoneId`; zones a record omits are stale. */
+function tzdataFor(
+  state: SimulatedHostState,
+  timeZoneId: string
+): SimulatedTzdata {
+  return typeof state.tzdata === "string"
+    ? state.tzdata
+    : (state.tzdata[timeZoneId] ?? "stale");
 }
 
 interface SeasonalZone {
@@ -179,7 +189,7 @@ export function simulatedHostModule(
     observeOffset(timeZoneId, instant) {
       return (
         simulateHostOffset(
-          state.tzdata,
+          tzdataFor(state, timeZoneId),
           timeZoneId,
           instant.epochMilliseconds
         ) ?? actual.observeOffset(timeZoneId, instant)
@@ -187,8 +197,12 @@ export function simulatedHostModule(
     },
     observeInstant(timeZoneId, local, disambiguation) {
       return (
-        simulateHostInstant(state.tzdata, timeZoneId, local, disambiguation) ??
-        actual.observeInstant(timeZoneId, local, disambiguation)
+        simulateHostInstant(
+          tzdataFor(state, timeZoneId),
+          timeZoneId,
+          local,
+          disambiguation
+        ) ?? actual.observeInstant(timeZoneId, local, disambiguation)
       );
     }
   };

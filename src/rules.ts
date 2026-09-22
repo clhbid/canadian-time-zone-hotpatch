@@ -13,7 +13,27 @@
  * (typically the next scheduled "fall back"). The two coincide where the
  * legislation commences at that skipped transition.
  */
-import type { TimeZoneRule } from "./types.js";
+import type { RuleId } from "./types.js";
+
+/** A correction rule for a Canadian time zone moving to a permanent UTC offset. */
+export interface TimeZoneRule {
+  /** Stable identifier for this rule. */
+  readonly ruleId: RuleId;
+  /** Canonical IANA time zone identifier this rule governs. */
+  readonly canonicalTimeZoneId: string;
+  /** Recognized IANA aliases/links that normalize to `canonicalTimeZoneId`. */
+  readonly aliases: readonly string[];
+  /** Human-readable jurisdiction name (for diagnostics, not for display). */
+  readonly jurisdiction: string;
+  /** Permanent UTC offset mandated by the rule, e.g. `"-06:00"`. */
+  readonly offset: string;
+  /** Fixed-offset `Etc/GMT` zone equivalent to `offset`, used for correction. */
+  readonly fixedTimeZoneId: string;
+  /** Instant the legislated offset legally commences, when it has been enacted. */
+  readonly legalEffectiveInstant?: string;
+  /** First instant a legacy (seasonal) host and the rule disagree. */
+  readonly firstDivergenceInstant: string;
+}
 
 export const rules: readonly TimeZoneRule[] = Object.freeze([
   Object.freeze({

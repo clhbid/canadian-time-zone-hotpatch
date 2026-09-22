@@ -5,34 +5,21 @@
  * Canadian permanent-time zone data without patching Temporal or Intl
  * globally. See the README for the interface, rule sources, and limitations.
  */
-import { createTimeZoneHotpatch } from "./config.js";
-
-export { createTimeZoneHotpatch, defaultConfig } from "./config.js";
-export { inspectTimeZoneSupport } from "./inspect.js";
+export { inspectHostSupport } from "./inspect.js";
 export {
-  OffsetBearingLocalDateTimeError,
+  OffsetBearingWallTimeError,
+  toCorrectedInstant,
+  toCorrectedZonedTime,
   UnknownTimeZoneError
-} from "./resolve.js";
+} from "./correct.js";
 export type {
+  CorrectedZonedTime,
   Disambiguation,
-  HotpatchConfig,
-  InspectTimeZoneSupportInput,
-  ResolvedLocalDateTime,
-  ResolvedTimeZone,
-  ResolveLocalDateTimeInput,
-  ResolveTimeZoneInput,
+  HostSupport,
   RuleId,
-  TimeZoneHotpatch,
   TimeZoneLabel,
-  TimeZoneRule,
   TimeZoneSupport,
   TimeZoneSupportStatus,
-  TranslationDictionary
+  ToCorrectedInstantInput,
+  ToCorrectedZonedTimeInput
 } from "./types.js";
-
-const defaultHotpatch = createTimeZoneHotpatch();
-
-/** Resolves an instant for display with the package's default configuration. */
-export const resolveTimeZone = defaultHotpatch.resolveTimeZone;
-/** Resolves a wall-clock time to an instant with the package's default configuration. */
-export const resolveLocalDateTime = defaultHotpatch.resolveLocalDateTime;

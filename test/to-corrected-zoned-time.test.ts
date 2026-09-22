@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  inspectTimeZoneSupport,
-  resolveTimeZone,
-  UnknownTimeZoneError
-} from "../src/index.js";
+import { toCorrectedZonedTime, UnknownTimeZoneError } from "../src/index.js";
+import { inspectTimeZoneSupport } from "../src/inspect.js";
 import { rules } from "../src/rules.js";
 import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
 
@@ -19,9 +16,9 @@ beforeEach(() => {
   hostState.tzdata = "stale";
 });
 
-describe("resolveTimeZone", () => {
+describe("toCorrectedZonedTime", () => {
   it("keeps the canonical zone before first divergence", () => {
-    const result = resolveTimeZone({
+    const result = toCorrectedZonedTime({
       instant: "2026-06-01T12:00:00Z",
       timeZoneId: "America/Edmonton"
     });
@@ -54,7 +51,7 @@ describe("resolveTimeZone", () => {
       { long: "Manitoba Time", short: "MBT" }
     ]
   ])("corrects %s to %s once stale", (timeZoneId, fixed, offset, label) => {
-    const result = resolveTimeZone({
+    const result = toCorrectedZonedTime({
       instant: "2026-12-25T12:00:00Z",
       timeZoneId
     });
@@ -63,8 +60,8 @@ describe("resolveTimeZone", () => {
     expect(result.label).toEqual(label);
   });
 
-  it("normalizes aliases before resolving", () => {
-    const result = resolveTimeZone({
+  it("normalizes aliases before correcting", () => {
+    const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "canada/mountain"
     });
@@ -73,7 +70,7 @@ describe("resolveTimeZone", () => {
   });
 
   it("passes an ungoverned zone through to the host without a label", () => {
-    const result = resolveTimeZone({
+    const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "America/Dawson_Creek"
     });
@@ -85,17 +82,8 @@ describe("resolveTimeZone", () => {
     });
   });
 
-  it("falls back to en-CA for an unsupported locale", () => {
-    const result = resolveTimeZone({
-      instant: "2026-11-02T12:00:00Z",
-      timeZoneId: "America/Edmonton",
-      locale: "de-DE"
-    });
-    expect(result.label).toEqual({ long: "Alberta Time", short: "ABT" });
-  });
-
   it("returns a frozen result", () => {
-    const result = resolveTimeZone({
+    const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "America/Edmonton"
     });
@@ -104,7 +92,7 @@ describe("resolveTimeZone", () => {
 
   it("throws for an unknown zone rather than choosing a jurisdiction", () => {
     expect(() =>
-      resolveTimeZone({
+      toCorrectedZonedTime({
         instant: "2026-11-02T12:00:00Z",
         timeZoneId: "Not/AZone"
       })
@@ -117,7 +105,7 @@ describe("resolveTimeZone", () => {
     "2026-11-02T12:00:00+99:00"
   ])("throws RangeError for the invalid instant %s", (instant) => {
     expect(() =>
-      resolveTimeZone({ instant, timeZoneId: "America/Edmonton" })
+      toCorrectedZonedTime({ instant, timeZoneId: "America/Edmonton" })
     ).toThrow(RangeError);
   });
 
@@ -134,8 +122,8 @@ describe("resolveTimeZone", () => {
           const divergence = Date.parse(rule.firstDivergenceInstant);
           for (const delta of [-1000, 0, 1000]) {
             const instant = new Date(divergence + delta).toISOString();
-            const result = resolveTimeZone({ instant, timeZoneId });
-            const support = inspectTimeZoneSupport({ timeZoneId, instant });
+            const result = toCorrectedZonedTime({ instant, timeZoneId });
+            const support = inspectTimeZoneSupport(timeZoneId, instant);
             expect(result.support).toEqual(support);
             expect(result.timeZoneId).toBe(
               support.status === "stale" ? rule.fixedTimeZoneId : timeZoneId

@@ -16,7 +16,10 @@ function compilerOptions(): ts.CompilerOptions {
   return {
     ...parsed.options,
     baseUrl: root,
-    paths: { "@clhbid/canadian-time-zone-hotpatch": ["src/index.ts"] }
+    paths: { "@clhbid/canadian-time-zone-hotpatch": ["src/index.ts"] },
+    // Examples are fragments, so bindings they end on are legitimately unused.
+    noUnusedLocals: false,
+    noUnusedParameters: false
   };
 }
 
