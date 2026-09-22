@@ -43,6 +43,7 @@ describe("inspectTimeZoneSupport", () => {
       "America/Fort_Nelson",
       "America/Creston",
       "America/Toronto",
+      "america/toronto",
       "Etc/GMT+6",
       "UTC",
       "-06:00"

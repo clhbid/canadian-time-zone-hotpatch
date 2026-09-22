@@ -47,7 +47,11 @@ export type TimeZoneSupportStatus =
   "current" | "stale" | "not_applicable" | "unknown";
 
 export interface InspectTimeZoneSupportInput {
-  /** IANA time zone identifier, matched case-insensitively; aliases are accepted. */
+  /**
+   * IANA time zone identifier. Governed zones and their aliases are matched
+   * case-insensitively by the package; every other identifier is matched by
+   * the host, which is also case-insensitive for IANA identifiers.
+   */
   readonly timeZoneId: string;
   /**
    * ISO 8601 instant to classify. Omit to probe at the governing rule's first
