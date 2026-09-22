@@ -59,7 +59,7 @@ export function inspectTimeZoneSupport(
  * Asks whether this host's timezone data knows the rules this package
  * patches, probing every rule at that rule's own first divergence. A host
  * that cannot observe a governed zone at all counts as stale for that rule,
- * having demonstrably not got the rule.
+ * since it cannot be assured to handle the zone correctly.
  */
 export function inspectHostSupport(): HostSupport {
   const staleRuleIds = rules

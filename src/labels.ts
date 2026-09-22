@@ -1,8 +1,8 @@
 /**
  * Approved English labels for each rule.
  *
- * Version 0.1 ships these `long` and `short` forms only; labels cannot alter
- * offset rules, which are owned exclusively by `src/rules.ts`.
+ * Labels cannot alter offset rules, which are owned exclusively
+ * by `src/rules.ts`.
  */
 import type { RuleId, TimeZoneLabel } from "./types.js";
 

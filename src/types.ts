@@ -53,7 +53,16 @@ export interface HostSupport {
   readonly staleRuleIds: readonly RuleId[];
 }
 
-/** Temporal's disambiguation modes for ambiguous or nonexistent wall-clock times. */
+/**
+ * Temporal's disambiguation modes for ambiguous or nonexistent wall-clock
+ * times; see
+ * https://tc39.es/proposal-temporal/docs/timezone.html#resolving-time-ambiguity-in-temporal.
+ *
+ * - `compatible` — later at a skipped time, earlier at a repeated time.
+ * - `earlier` — the earlier possible instant.
+ * - `later` — the later possible instant.
+ * - `reject` — throws the `RangeError` Temporal would throw.
+ */
 export type Disambiguation = "compatible" | "earlier" | "later" | "reject";
 
 /** Input to `toCorrectedZonedTime`. */

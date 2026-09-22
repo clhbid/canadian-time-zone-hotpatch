@@ -11,7 +11,7 @@ export {
   toCorrectedInstant,
   toCorrectedZonedTime,
   UnknownTimeZoneError
-} from "./resolve.js";
+} from "./correct.js";
 export type {
   CorrectedZonedTime,
   Disambiguation,
