@@ -9,7 +9,10 @@
  * here read `globalThis.Temporal` on every call; a caller without a global
  * one supplies their own through `createHotpatch`.
  */
-import { createHotpatch } from "./hotpatch.js";
+import * as correct from "./correct.js";
+import type { Hotpatch } from "./hotpatch.js";
+import { inspectHostSupport as inspect } from "./inspect.js";
+import { requireGlobalTemporal } from "./temporal.js";
 
 export { OffsetBearingWallTimeError, UnknownTimeZoneError } from "./correct.js";
 export { createHotpatch } from "./hotpatch.js";
@@ -28,6 +31,23 @@ export type {
   ToCorrectedZonedTimeInput
 } from "./types.js";
 
-/** The default instance, bound to whatever `globalThis.Temporal` holds at call time. */
-export const { inspectHostSupport, toCorrectedInstant, toCorrectedZonedTime } =
-  createHotpatch();
+/*
+ * The default instance, equivalent to `createHotpatch()`: every call reads
+ * `globalThis.Temporal` afresh, so a global installed after this module is
+ * imported still counts, and throws `MissingTemporalError` when there is
+ * none. They are written out here rather than destructured from a
+ * module-scope `createHotpatch()` so that importing one of them does not pull
+ * the other two in with it.
+ */
+
+/** Asks whether this host's timezone data knows the rules this package patches. */
+export const inspectHostSupport: Hotpatch["inspectHostSupport"] = () =>
+  inspect(requireGlobalTemporal());
+
+/** Computes the instant a wall-clock reading denotes. */
+export const toCorrectedInstant: Hotpatch["toCorrectedInstant"] = (input) =>
+  correct.toCorrectedInstant(requireGlobalTemporal(), input);
+
+/** Corrects an instant for display; the instant itself never changes. */
+export const toCorrectedZonedTime: Hotpatch["toCorrectedZonedTime"] = (input) =>
+  correct.toCorrectedZonedTime(requireGlobalTemporal(), input);

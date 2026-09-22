@@ -23,13 +23,15 @@ export class MissingTemporalError extends TypeError {
   }
 }
 
-/** The statics this package calls; a candidate missing any of them is not usable. */
-const requiredStatics: Readonly<Record<string, readonly string[]>> =
-  Object.freeze({
-    Instant: ["from", "fromEpochMilliseconds", "compare"],
-    PlainDateTime: ["from"],
-    PlainDate: ["from", "compare"]
-  });
+/** Every static this package calls; a candidate missing any of them is unusable. */
+const requiredStatics: readonly string[] = [
+  "Instant.from",
+  "Instant.fromEpochMilliseconds",
+  "Instant.compare",
+  "PlainDateTime.from",
+  "PlainDate.from",
+  "PlainDate.compare"
+];
 
 /** Whether `candidate` exposes every Temporal static this package calls. */
 function isTemporalNamespace(
@@ -39,11 +41,10 @@ function isTemporalNamespace(
     return false;
   }
   const namespace = candidate as Record<string, Record<string, unknown>>;
-  return Object.entries(requiredStatics).every(([name, statics]) =>
-    // A constructor is a function, but a namespace object stands in equally;
-    // only the statics actually called have to be there.
-    statics.every((member) => typeof namespace[name]?.[member] === "function")
-  );
+  return requiredStatics.every((path) => {
+    const [name, member] = path.split(".") as [string, string];
+    return typeof namespace[name]?.[member] === "function";
+  });
 }
 
 /** Validates `candidate`, throwing `MissingTemporalError` when it is unusable. */
