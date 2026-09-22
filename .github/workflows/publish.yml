@@ -1,9 +1,14 @@
 name: Publish
 
-# Publishes to npm with provenance through trusted publishing. Never runs
-# from a pull request: only a published GitHub release or a maintainer's
-# manual dispatch, once the npm-publish environment and the package's trusted
-# publisher are configured.
+# Publishes to npm with provenance. Never runs from a pull request: only a
+# published GitHub release or a maintainer's manual dispatch.
+#
+# Authentication has two phases. npm cannot configure a trusted publisher for
+# a package that does not exist yet (npm/cli#8544), so the first publish
+# authenticates with a short-lived granular token in the NPM_TOKEN secret.
+# Once the package exists and its trusted publisher is configured, delete that
+# secret: npm then authenticates over OIDC and no long-lived credential
+# remains. Provenance comes from `id-token: write` either way.
 on:
   release:
     types: [published]
@@ -23,7 +28,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
           cache: npm
 
       # Trusted publishing needs npm 11.5.1 or newer; Node 22 bundles npm 10.
@@ -33,4 +37,16 @@ jobs:
 
       - run: npm run release:validate
 
-      - run: npm publish --provenance --access public
+      - name: Publish to npm
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "Authenticating with the NPM_TOKEN secret (bootstrap publish)."
+            # Single-quoted: npm expands $NPM_TOKEN when it reads .npmrc,
+            # so the token itself never reaches the command line.
+            npm config set //registry.npmjs.org/:_authToken '${NPM_TOKEN}'
+          else
+            echo "No NPM_TOKEN secret; authenticating over OIDC (trusted publishing)."
+          fi
+          npm publish --provenance --access public
