@@ -9,10 +9,10 @@
 import type { HostInstant, HostPlainDateTime } from "./host.js";
 import { observeInstant, observeOffset } from "./host.js";
 import { inspectTimeZoneSupport } from "./inspect.js";
+import { labels } from "./labels.js";
 import type { TimeZoneRule } from "./rules.js";
 import { findRule } from "./rules.js";
 import { Temporal } from "./temporal.js";
-import { labels } from "./translations.js";
 import type {
   CorrectedZonedTime,
   TimeZoneSupport,
