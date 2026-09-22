@@ -11,8 +11,8 @@ export default tseslint.config(
   {
     files: ["**/*.ts"],
     rules: {
-      // Match clhbid.com: TypeScript catches unused locals without the v8
-      // eslint rule's false positives.
+      // TypeScript catches unused locals without the v8 eslint rule's
+      // false positives.
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/consistent-type-imports": [
         "error",

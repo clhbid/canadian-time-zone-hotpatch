@@ -5,8 +5,8 @@ corrects stale Canadian permanent-time zone data on the host running it, without
 `Temporal`, `Intl`, or any built-in globally.
 
 Browser and operating-system timezone data lag behind Canadian provincial legislation that ends
-seasonal clock changes. A stale host shows sale times an hour off and turns an admin's wall-clock
-input into the wrong instant. This package owns a small, source-cited rule table for the affected
+seasonal clock changes. A stale host displays a moment an hour off and reads a wall-clock entry as
+the wrong moment. This package owns a small, source-cited rule table for the affected
 zones, tells the application whether the running host already knows those rules, and corrects
 calculations in both directions only where the host is stale. Detection compares the offsets the
 host reports against the offsets the rules require — never user agents, operating systems, ICU,
