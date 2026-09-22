@@ -38,6 +38,23 @@ function trapNamespace(): TemporalNamespace {
   } as unknown as TemporalNamespace;
 }
 
+function namespaceCandidate() {
+  return {
+    Instant: {
+      from: PolyfillTemporal.Instant.from,
+      fromEpochMilliseconds: PolyfillTemporal.Instant.fromEpochMilliseconds,
+      compare: PolyfillTemporal.Instant.compare
+    },
+    PlainDateTime: {
+      from: PolyfillTemporal.PlainDateTime.from
+    },
+    PlainDate: {
+      from: PolyfillTemporal.PlainDate.from,
+      compare: PolyfillTemporal.PlainDate.compare
+    }
+  };
+}
+
 beforeEach(() => {
   hostState.tzdata = "stale";
 });
@@ -66,19 +83,82 @@ describe("a missing Temporal implementation", () => {
     }
   );
 
-  it("throws MissingTemporalError from createHotpatch when the supplied value is not a namespace", () => {
-    for (const invalid of [
-      null,
-      42,
-      {},
-      { Temporal: PolyfillTemporal },
-      { Instant: PolyfillTemporal.Instant }
-    ]) {
+  it.each([
+    ["null", null],
+    ["boolean", false],
+    ["number", 42],
+    ["bigint", 42n],
+    ["string", "Temporal"],
+    ["symbol", Symbol("Temporal")],
+    ["empty object", {}],
+    ["wrapped namespace", { Temporal: PolyfillTemporal }],
+    ["missing Instant namespace", { PlainDateTime: {}, PlainDate: {} }],
+    ["missing PlainDateTime namespace", { Instant: {}, PlainDate: {} }],
+    ["missing PlainDate namespace", { Instant: {}, PlainDateTime: {} }],
+    [
+      "missing Instant.from",
+      {
+        ...namespaceCandidate(),
+        Instant: {
+          ...namespaceCandidate().Instant,
+          from: undefined
+        }
+      }
+    ],
+    [
+      "non-function Instant.fromEpochMilliseconds",
+      {
+        ...namespaceCandidate(),
+        Instant: {
+          ...namespaceCandidate().Instant,
+          fromEpochMilliseconds: "nope"
+        }
+      }
+    ],
+    [
+      "missing Instant.compare",
+      {
+        ...namespaceCandidate(),
+        Instant: {
+          ...namespaceCandidate().Instant,
+          compare: undefined
+        }
+      }
+    ],
+    [
+      "missing PlainDateTime.from",
+      {
+        ...namespaceCandidate(),
+        PlainDateTime: {}
+      }
+    ],
+    [
+      "missing PlainDate.from",
+      {
+        ...namespaceCandidate(),
+        PlainDate: {
+          compare: PolyfillTemporal.PlainDate.compare
+        }
+      }
+    ],
+    [
+      "non-function PlainDate.compare",
+      {
+        ...namespaceCandidate(),
+        PlainDate: {
+          ...namespaceCandidate().PlainDate,
+          compare: "nope"
+        }
+      }
+    ]
+  ])(
+    "throws MissingTemporalError from createHotpatch when temporal is %s",
+    (_, invalid) => {
       expect(() =>
         createHotpatch({ temporal: invalid as unknown as TemporalNamespace })
       ).toThrow(MissingTemporalError);
     }
-  });
+  );
 });
 
 describe("a global Temporal implementation", () => {
@@ -154,5 +234,19 @@ describe("a supplied Temporal implementation", () => {
     expect(createHotpatch({}).toCorrectedZonedTime(edmonton)).toEqual(
       createHotpatch().toCorrectedZonedTime(edmonton)
     );
+  });
+
+  it("treats an explicit undefined temporal like omitting the option", () => {
+    const hotpatch = createHotpatch({
+      temporal: undefined as unknown as TemporalNamespace
+    });
+
+    vi.stubGlobal("Temporal", undefined);
+    expect(() => hotpatch.toCorrectedZonedTime(edmonton)).toThrow(
+      MissingTemporalError
+    );
+
+    vi.stubGlobal("Temporal", PolyfillTemporal);
+    expect(hotpatch.toCorrectedZonedTime(edmonton)).toMatchObject(corrected);
   });
 });

@@ -93,12 +93,6 @@ const display = toCorrectedZonedTime({
 // display.offset — "-06:00"
 ```
 
-`createHotpatch()` with no implementation — which is what the top-level exports use — reads
-`globalThis.Temporal` on every call, so a global polyfill installed during application bootstrap
-is picked up even though the package was imported before it. When no compatible implementation can
-be found, the call throws `MissingTemporalError`, naming both remedies; importing the package
-never throws and never reads a global.
-
 ### Reporting host support to analytics
 
 ```ts
@@ -121,54 +115,8 @@ const event = {
 
 ## Interface
 
-The signatures and types live in [`src/index.ts`](./src/index.ts) and ship as declarations in
-`dist/`; the notes here cover behaviour the signatures do not say.
-
-`toCorrectedZonedTime` corrects an instant for display and never changes the instant it is given.
-`toCorrectedInstant` computes the instant a wall-clock reading denotes — the only direction that
-produces new data, which is why `disambiguation` belongs there and nowhere else. Both return one
-`CorrectedZonedTime`: the `instant`, the effective `timeZoneId` — the canonical named zone when
-the host is current or the zone is ungoverned, the rule's fixed `Etc/GMT` zone when the host is
-stale — the `offset` in that zone, the approved `label` with `long` and `short` forms (absent for
-ungoverned zones), and the `support` result that chose the zone.
-
-`CorrectedZonedTime.support` is per-zone support with a `status` of:
-
-- `current` — the host agrees with the rule at the probed instant, or the rule has not yet
-  diverged from seasonal time there, so no correction is required.
-- `stale` — the host reports a legacy seasonal offset where the rule mandates a permanent one.
-- `not_applicable` — a valid time zone that no rule in this package governs, including the
-  unaffected B.C. regional zones `America/Dawson_Creek` and `America/Fort_Nelson`.
-- `unknown` — the identifier is not a time zone the host recognizes.
-
-Governed results (`current` and `stale`) carry the canonical `timeZoneId` and the `ruleId` that
-classified them; the other statuses carry the `timeZoneId` as given.
-
-For `toCorrectedZonedTime`, `support` is support at the instant. For `toCorrectedInstant` it is
-the rule-owned probe from the divergence day on, because a stale host repeats that day's skipped
-hour and mis-offsets every wall time after it, so the whole day must resolve in the fixed zone;
-before that day, seasonal host data is correct and the host's own disambiguation applies.
-
-`inspectHostSupport()` asks whether this host's timezone data knows the rules this package
-patches. It takes no arguments and probes every rule at that rule's own first divergence, so the
-result depends on neither the caller's zone nor any instant being displayed. `HostSupport.status`
-is `stale` when any governed rule is stale, and `staleRuleIds` lists the stale rules individually
-— rules can reach a host in different tzdata releases — in rule-table order, so joining it into an
-analytics dimension yields a stable string. A host that cannot observe a governed zone at all
-counts as stale for that rule, having demonstrably not got the rule.
-
-`createHotpatch(options?)` binds the three functions above to one `Temporal` implementation:
-`options.temporal` when you supply one, validated on the spot so a wrong value fails where the
-mistake was made, or `globalThis.Temporal` read per call when you do not. The error classes are
-not per instance — they are top-level exports, matched with `instanceof`.
-
-Correction fails explicitly rather than guessing: `MissingTemporalError` when no compatible
-`Temporal` is available, `UnknownTimeZoneError` for an unrecognized zone,
-`OffsetBearingWallTimeError` for a wall-clock time carrying a UTC offset or `Z`, and Temporal's
-`RangeError` for malformed instants or wall times and for `disambiguation: "reject"` at a repeated
-or skipped time.
-
-Every result the package returns is frozen.
+Read [`src/index.ts`](./src/index.ts), [`src/`](./src/), and the specs in [`test/`](./test/) for
+the shipped signatures and behavioural detail.
 
 ## Governed rules
 
@@ -213,16 +161,6 @@ Each rule is temporary. Once host timezone data for a jurisdiction is current ac
 populations that telemetry reports on, its rule is deprecated in this README for one minor
 release and then removed in the next major release, at which point the zone reports
 `not_applicable`. Consumers should not rely on a rule outliving the stale hosts it exists for.
-
-## Compatibility
-
-The package requires a compatible `Temporal` and treats native and polyfilled implementations
-alike: it reads `globalThis.Temporal`, or uses the implementation given to `createHotpatch`, and
-never assigns to `globalThis`. It depends only on `temporal-spec`, which is types-only and emits
-no runtime code, so nothing beyond this package's own modules reaches your bundle. Every host read
-goes through
-[`src/host.ts`](./src/host.ts), so the tests simulate a legacy or updated host instead of depending
-on the runner's own tzdata.
 
 ## Development
 
