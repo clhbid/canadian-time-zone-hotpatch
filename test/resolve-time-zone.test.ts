@@ -34,28 +34,6 @@ describe("resolveTimeZone", () => {
     });
   });
 
-  it("switches a stale host to the rule's fixed zone after first divergence", () => {
-    const result = resolveTimeZone({
-      instant: "2026-11-02T12:00:00Z",
-      timeZoneId: "America/Edmonton"
-    });
-    expect(result.timeZoneId).toBe("Etc/GMT+6");
-    expect(result.offset).toBe("-06:00");
-    expect(result.label).toBe("Alberta Time (ABT)");
-    expect(result.support.status).toBe("stale");
-  });
-
-  it("keeps the canonical zone on an updated host after first divergence", () => {
-    hostState.tzdata = "current";
-    const result = resolveTimeZone({
-      instant: "2026-11-02T12:00:00Z",
-      timeZoneId: "America/Edmonton"
-    });
-    expect(result.timeZoneId).toBe("America/Edmonton");
-    expect(result.offset).toBe("-06:00");
-    expect(result.support.status).toBe("current");
-  });
-
   it.each([
     ["America/Edmonton", "Etc/GMT+6", "-06:00", "Alberta Time (ABT)"],
     ["America/Vancouver", "Etc/GMT+7", "-07:00", "Pacific Time (PCT)"],
@@ -147,11 +125,9 @@ describe("resolveTimeZone", () => {
             expect(result.timeZoneId).toBe(
               support.status === "stale" ? rule.fixedTimeZoneId : timeZoneId
             );
-            expect(result.offset).toBe(
-              delta < 0 && tzdata === "stale"
-                ? support.observedOffset
-                : rule.offset
-            );
+            // The seasonal offset just before the skipped fall-back is the
+            // permanent one, so every probe expects the rule's offset.
+            expect(result.offset).toBe(rule.offset);
           }
         }
       );

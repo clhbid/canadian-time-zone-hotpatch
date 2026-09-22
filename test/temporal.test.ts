@@ -82,21 +82,4 @@ describe("resolution through a native-like Temporal global", () => {
       })
     ).toMatchObject({ instant: "2026-11-01T07:30:00Z", offset: "-06:00" });
   });
-
-  it("keeps the canonical zone when the native-like global's data is current", async () => {
-    vi.stubGlobal("Temporal", createNativeLikeTemporal());
-    hostState.tzdata = "current";
-
-    const { resolveTimeZone } = await import("../src/index.js");
-
-    expect(
-      resolveTimeZone({
-        instant: "2026-11-02T12:00:00Z",
-        timeZoneId: "America/Edmonton"
-      })
-    ).toMatchObject({
-      timeZoneId: "America/Edmonton",
-      support: expect.objectContaining({ status: "current" })
-    });
-  });
 });

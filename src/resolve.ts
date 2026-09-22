@@ -7,7 +7,7 @@
  * unknown zone fails rather than guessing a jurisdiction.
  */
 import type { HostInstant, HostPlainDateTime } from "./host.js";
-import { isKnownTimeZoneId, observeInstant, observeOffset } from "./host.js";
+import { observeInstant, observeOffset } from "./host.js";
 import { inspectTimeZoneSupport } from "./inspect.js";
 import { findRule } from "./rules.js";
 import { Temporal } from "./temporal.js";
@@ -41,10 +41,6 @@ export class OffsetBearingLocalDateTimeError extends RangeError {
   }
 }
 
-/** A UTC offset or `Z` following the time part of an ISO 8601 string. */
-const offsetDesignator =
-  /[Tt ]\d{2}(?::?\d{2}){0,2}(?:[.,]\d+)?(?:[Zz]|[+-]\d{2}(?::?\d{2})?)/;
-
 export function resolveTimeZone(
   config: HotpatchConfig,
   input: ResolveTimeZoneInput
@@ -53,10 +49,11 @@ export function resolveTimeZone(
   if (support.status === "unknown") {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
+  const rule = findRule(support.timeZoneId);
   return resolved(
     config,
     Temporal.Instant.from(input.instant),
-    effectiveTimeZoneId(support),
+    effectiveTimeZoneId(support, rule),
     support,
     input.locale
   );
@@ -68,47 +65,54 @@ export function resolveLocalDateTime(
 ): ResolvedLocalDateTime {
   // `Temporal.PlainDateTime.from` discards a numeric offset silently, which
   // would quietly reinterpret a supplied instant as wall time.
-  if (offsetDesignator.test(input.localDateTime)) {
+  if (parsesAsInstant(input.localDateTime)) {
     throw new OffsetBearingLocalDateTimeError(input.localDateTime);
   }
   const local = Temporal.PlainDateTime.from(input.localDateTime);
 
-  const rule = findRule(input.timeZoneId);
-  if (!rule && !isKnownTimeZoneId(input.timeZoneId)) {
+  const probe = inspectTimeZoneSupport({ timeZoneId: input.timeZoneId });
+  if (probe.status === "unknown") {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
 
-  let timeZoneId = rule ? rule.canonicalTimeZoneId : input.timeZoneId;
-  let support: TimeZoneSupport | undefined;
-  if (rule && !isBeforeDivergenceDate(rule, local)) {
-    // A stale host repeats the divergence day's skipped hour and mis-offsets
-    // every wall time after it, so from that calendar day on the rule-owned
-    // probe decides the zone. Before it, seasonal host data is correct.
-    support = inspectTimeZoneSupport({ timeZoneId: rule.canonicalTimeZoneId });
-    if (support.status === "unknown") {
-      throw new UnknownTimeZoneError(input.timeZoneId);
-    }
-    timeZoneId = effectiveTimeZoneId(support);
-  }
+  // A stale host repeats the divergence day's skipped hour and mis-offsets
+  // every wall time after it, so from that calendar day on the rule-owned
+  // probe decides the zone. Before it, seasonal host data is correct and
+  // the host's own disambiguation applies.
+  const rule = findRule(probe.timeZoneId);
+  const probeDecides =
+    rule !== undefined && !isBeforeDivergenceDate(rule, local);
+  const timeZoneId = probeDecides
+    ? effectiveTimeZoneId(probe, rule)
+    : probe.timeZoneId;
 
   const instant = observeInstant(timeZoneId, local, input.disambiguation);
-  return resolved(
-    config,
-    instant,
-    timeZoneId,
-    support ??
-      inspectTimeZoneSupport({
-        timeZoneId: input.timeZoneId,
+  const support = probeDecides
+    ? probe
+    : inspectTimeZoneSupport({
+        timeZoneId: probe.timeZoneId,
         instant: instant.toString()
-      }),
-    input.locale
-  );
+      });
+  return resolved(config, instant, timeZoneId, support, input.locale);
+}
+
+/** Temporal's own grammar decides what bears an offset: whatever parses as an instant. */
+function parsesAsInstant(value: string): boolean {
+  try {
+    Temporal.Instant.from(value);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** The zone that computes correct offsets: the rule's fixed zone on a stale host, else the zone itself. */
-function effectiveTimeZoneId(support: TimeZoneSupport): string {
-  return support.status === "stale"
-    ? (findRule(support.timeZoneId)?.fixedTimeZoneId ?? support.timeZoneId)
+function effectiveTimeZoneId(
+  support: TimeZoneSupport,
+  rule: TimeZoneRule | undefined
+): string {
+  return support.status === "stale" && rule
+    ? rule.fixedTimeZoneId
     : support.timeZoneId;
 }
 
@@ -131,13 +135,13 @@ function resolved(
 ): ResolvedTimeZone {
   const offset = observeOffset(timeZoneId, instant);
   if (offset === undefined) {
-    throw new UnknownTimeZoneError(support.timeZoneId);
+    throw new UnknownTimeZoneError(timeZoneId);
   }
   return Object.freeze({
     instant: instant.toString(),
     timeZoneId,
     offset,
-    ...(support.ruleId && {
+    ...("ruleId" in support && {
       label: resolveLabel(
         config.translations,
         config.fallbackLocale,

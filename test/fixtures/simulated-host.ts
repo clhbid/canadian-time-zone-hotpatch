@@ -129,39 +129,36 @@ export function simulateHostInstant(
   local: HostPlainDateTime,
   disambiguation: Disambiguation
 ): HostInstant | undefined {
-  const zone = seasonalZones[timeZoneId];
-  if (!zone) {
-    return undefined;
-  }
   const wall = local.toZonedDateTime("UTC").toInstant();
   const at = (offset: string) =>
     wall.subtract({ milliseconds: offsetToMilliseconds(offset) });
   const offsetAt = (instant: HostInstant) =>
     simulateHostOffset(tzdata, timeZoneId, instant.epochMilliseconds);
 
-  // An offset is valid only if the host reports it at the instant it
-  // produces; ascending order makes the first candidate the earlier one.
-  const valid = [zone.daylight, zone.standard]
-    .map((offset) => ({ offset, instant: at(offset) }))
-    .filter(({ offset, instant }) => offsetAt(instant) === offset)
-    .map(({ instant }) => instant)
-    .sort((a, b) => a.epochMilliseconds - b.epochMilliseconds);
+  // Like Temporal, the candidates are the offsets in force a day either side
+  // of the wall time; one is valid only if the host reports it at the
+  // instant it produces. The offset before a fall-back yields the earlier.
+  const offsetBefore = offsetAt(wall.subtract({ milliseconds: day }));
+  const offsetAfter = offsetAt(wall.add({ milliseconds: day }));
+  if (offsetBefore === undefined || offsetAfter === undefined) {
+    return undefined;
+  }
+  const [earlier, later] = [...new Set([offsetBefore, offsetAfter])].filter(
+    (offset) => offsetAt(at(offset)) === offset
+  );
 
-  if (valid.length === 1) {
-    return valid[0];
+  if (earlier !== undefined && later === undefined) {
+    return at(earlier);
   }
   if (disambiguation === "reject") {
-    throw new RangeError(`${valid.length ? "Ambiguous" : "Nonexistent"} time`);
+    throw new RangeError(`${earlier ? "Ambiguous" : "Nonexistent"} time`);
   }
-  if (valid.length === 2) {
-    return valid[disambiguation === "later" ? 1 : 0];
+  if (earlier !== undefined && later !== undefined) {
+    return at(disambiguation === "later" ? later : earlier);
   }
   // A gap: `earlier` applies the offset in force after it, the others the
   // offset in force before it.
-  const offsetBefore = offsetAt(wall.subtract({ milliseconds: day }));
-  const offsetAfter = offsetAt(wall.add({ milliseconds: day }));
-  const offset = disambiguation === "earlier" ? offsetAfter : offsetBefore;
-  return offset === undefined ? undefined : at(offset);
+  return at(disambiguation === "earlier" ? offsetAfter : offsetBefore);
 }
 
 /**

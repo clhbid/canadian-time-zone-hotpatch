@@ -120,10 +120,10 @@ times and for `disambiguation: "reject"` at a repeated or skipped time.
 | British Columbia | `America/Vancouver` | `Canada/Pacific`  | `-07:00`         | `Etc/GMT+7` | Pacific Time (PCT)  |
 | Manitoba         | `America/Winnipeg`  | `Canada/Central`  | `-05:00`         | `Etc/GMT+5` | Manitoba Time (MBT) |
 
-Each rule models a `legalEffectiveInstant` (when the legislated offset commences — not Royal Assent
-or an announcement) separately from its `firstDivergenceInstant` (the first moment a legacy host's
-seasonal data disagrees with the rule: the skipped "fall back" on 2026-11-01). Fixed correction
-zones use IANA's inverted `Etc/GMT` signs: UTC-6 is `Etc/GMT+6`.
+Each rule keeps the instant its offset legally commences separate from its `firstDivergenceInstant`,
+the skipped "fall back" on 2026-11-01 when a legacy host first disagrees with it; see
+[`src/rules.ts`](./src/rules.ts). Fixed correction zones use IANA's inverted `Etc/GMT` signs: UTC-6
+is `Etc/GMT+6`.
 
 Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 
@@ -190,10 +190,9 @@ still run stale data. Use one event per governed zone; `not_applicable` and `unk
 ## Compatibility
 
 The package reads a native `Temporal` global when the host provides one and otherwise uses the
-bundled `temporal-polyfill`; it never assigns to `globalThis`. Both paths are exercised in
-[`test/temporal.test.ts`](./test/temporal.test.ts). Host offsets are read through one module,
-[`src/host.ts`](./src/host.ts), which the tests replace with a simulated legacy or updated host
-so stale and current outcomes do not depend on the test runner's own tzdata.
+bundled `temporal-polyfill`; it never assigns to `globalThis`. Every host read goes through
+[`src/host.ts`](./src/host.ts), so the tests simulate a legacy or updated host instead of depending
+on the runner's own tzdata.
 
 ## Development
 

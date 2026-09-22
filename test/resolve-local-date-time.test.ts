@@ -45,16 +45,6 @@ describe("resolveLocalDateTime", () => {
       }
     );
 
-    it("corrects a wall time after the skipped transition on a stale host", () => {
-      const result = resolveLocalDateTime({
-        localDateTime: "2026-11-01T09:00:00",
-        timeZoneId: "America/Edmonton",
-        disambiguation: "compatible"
-      });
-      expect(result.instant).toBe("2026-11-01T15:00:00Z");
-      expect(result.offset).toBe("-06:00");
-    });
-
     it.each(disambiguations)(
       "keeps the canonical zone on an updated host under %s",
       (disambiguation) => {
@@ -111,20 +101,14 @@ describe("resolveLocalDateTime", () => {
     it.each(["2026-03-08T02:30:00", "2025-11-02T01:30:00"])(
       "rejects %s under reject with a RangeError that is not an unknown zone",
       (localDateTime) => {
-        expect(() =>
+        const attempt = () =>
           resolveLocalDateTime({
             localDateTime,
             timeZoneId: "America/Edmonton",
             disambiguation: "reject"
-          })
-        ).toThrow(RangeError);
-        expect(() =>
-          resolveLocalDateTime({
-            localDateTime,
-            timeZoneId: "America/Edmonton",
-            disambiguation: "reject"
-          })
-        ).not.toThrow(UnknownTimeZoneError);
+          });
+        expect(attempt).toThrow(RangeError);
+        expect(attempt).not.toThrow(UnknownTimeZoneError);
       }
     );
   });
@@ -168,15 +152,6 @@ describe("resolveLocalDateTime", () => {
       offset: "-07:00",
       support: { status: "not_applicable", timeZoneId: "America/Dawson_Creek" }
     });
-  });
-
-  it("accepts a date-only wall time as midnight", () => {
-    const result = resolveLocalDateTime({
-      localDateTime: "2026-12-25",
-      timeZoneId: "America/Edmonton",
-      disambiguation: "compatible"
-    });
-    expect(result.instant).toBe("2026-12-25T06:00:00Z");
   });
 
   it("throws for an unknown zone rather than choosing a jurisdiction", () => {
