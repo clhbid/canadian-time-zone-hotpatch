@@ -64,19 +64,19 @@ describe("resolution through a native-like Temporal global", () => {
     vi.stubGlobal("Temporal", nativeLike);
 
     const { Temporal } = await import("../src/temporal.js");
-    const { resolveLocalDateTime, resolveTimeZone } =
+    const { toCorrectedInstant, toCorrectedZonedTime } =
       await import("../src/index.js");
 
     expect(Temporal).toBe(nativeLike);
     expect(
-      resolveTimeZone({
+      toCorrectedZonedTime({
         instant: "2026-11-02T12:00:00Z",
         timeZoneId: "America/Edmonton"
       })
     ).toMatchObject({ timeZoneId: "Etc/GMT+6", offset: "-06:00" });
     expect(
-      resolveLocalDateTime({
-        localDateTime: "2026-11-01T01:30:00",
+      toCorrectedInstant({
+        wallTime: "2026-11-01T01:30:00",
         timeZoneId: "America/Edmonton",
         disambiguation: "compatible"
       })

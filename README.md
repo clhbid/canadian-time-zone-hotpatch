@@ -5,12 +5,12 @@ corrects stale Canadian permanent-time zone data on the host running it, without
 `Temporal`, `Intl`, or any built-in globally.
 
 Browser and operating-system timezone data lag behind Canadian provincial legislation that ends
-seasonal clock changes. A stale host shows sale times an hour off and turns an admin's wall-clock
-input into the wrong instant. This package owns a small, source-cited rule table for the affected
-zones, tells the application whether the running host already knows those rules, and corrects
-calculations in both directions only where the host is stale. Detection compares the offsets the
-host reports against the offsets the rules require — never user agents, operating systems, ICU,
-Temporal implementations, or tzdata versions.
+seasonal clock changes. A stale host displays times an hour off and turns a wall-clock entry into
+the wrong instant. This package owns a small, source-cited rule table for the affected zones,
+corrects calculations in both directions only where the host is stale, and reports whether the
+running host already knows those rules. Detection compares the offsets the host reports against
+the offsets the rules require — never user agents, operating systems, ICU, Temporal
+implementations, or tzdata versions.
 
 ## Install
 
@@ -24,47 +24,82 @@ whenever the host does not expose a `Temporal` global; the package never assigns
 
 ## Usage
 
+The examples in this section are typechecked by `test/readme.test.ts`.
+
+### Correcting instants
+
 ```ts
 import {
-  inspectTimeZoneSupport,
-  resolveLocalDateTime,
-  resolveTimeZone
+  toCorrectedInstant,
+  toCorrectedZonedTime
 } from "@clhbid/canadian-time-zone-hotpatch";
 
-// Does this host know the Alberta rule? Omitting `instant` probes at the
-// rule's own first divergence, so the answer carries no caller bias.
-inspectTimeZoneSupport({ timeZoneId: "America/Edmonton" });
-// => { status: "stale", timeZoneId: "America/Edmonton",
-//      ruleId: "ab-permanent-time-2026", expectedOffset: "-06:00",
-//      observedOffset: "-07:00", firstDivergence: "2026-11-01T02:00:00-06:00" }
-
-// Display an instant: a stale host is corrected through the fixed zone.
-resolveTimeZone({
-  instant: "2026-11-15T12:00:00Z",
+// Display a stored instant. Pass the instant and the zone you are showing it
+// in — often the viewer's own. Format with the zone that comes back, never
+// the one you passed: on a stale host they differ, and that difference is the
+// correction.
+const display = toCorrectedZonedTime({
+  instant: "2026-11-15T19:00:00Z",
   timeZoneId: "America/Edmonton"
 });
-// => { instant: "2026-11-15T12:00:00Z", timeZoneId: "Etc/GMT+6", offset: "-06:00",
-//      label: { long: "Alberta Time", short: "ABT" }, support: { status: "stale", ... } }
+// display.timeZoneId — "Etc/GMT+6" on a stale host, "America/Edmonton" on a current one
+// display.offset     — "-06:00" either way
+// display.label      — { long: "Alberta Time", short: "ABT" }
 
-// Resolve a wall-clock time to the legislated instant.
-resolveLocalDateTime({
-  localDateTime: "2026-11-01T01:30:00",
+const formatted = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "long",
+  timeStyle: "short",
+  timeZone: display.timeZoneId
+}).format(new Date(display.instant));
+const shown = `${formatted} ${display.label?.short ?? ""}`;
+// "November 15, 2026 at 1:00 p.m. ABT" — an uncorrected host says 12:00 p.m.
+
+// Parse a wall-clock entry. A wall-clock reading carries no offset of its own.
+// "reject" refuses a reading the zone repeats or skips rather than silently
+// picking one of two moments.
+const entry = toCorrectedInstant({
+  wallTime: "2026-12-15T10:00:00",
   timeZoneId: "America/Edmonton",
-  disambiguation: "compatible"
+  disambiguation: "reject"
 });
-// => { instant: "2026-11-01T07:30:00Z", timeZoneId: "Etc/GMT+6", offset: "-06:00", ... }
+const stored = entry.instant;
+// "2026-12-15T16:00:00Z" — an uncorrected host produces 17:00:00Z.
 ```
 
-Use `result.timeZoneId` and `result.offset` to format the corrected time with Temporal or `Intl`,
-and `result.label.long` or `result.label.short` as the approved zone name in place of the host's.
-The examples in this README are typechecked by `test/readme.test.ts`.
+### Reporting host support to analytics
+
+```ts
+import { inspectHostSupport } from "@clhbid/canadian-time-zone-hotpatch";
+
+// Once per session. No arguments: the package probes every rule it owns, at
+// each rule's own first divergence, so the answer describes this host's
+// timezone data rather than where the visitor happens to be.
+const host = inspectHostSupport();
+const event = {
+  status: host.status, // "current" | "stale"
+  staleRules: host.staleRuleIds.join(",") // "" when nothing is stale
+};
+// On a host that has the B.C. and Manitoba rules but not Alberta's:
+// { status: "stale", staleRules: "ab-permanent-time-2026" }
+//
+// Send `event` once per session. It carries no zone, offset, instant or user
+// agent, and never reads the visitor's own timezone.
+```
 
 ## Interface
 
 The signatures and types live in [`src/index.ts`](./src/index.ts) and ship as declarations in
 `dist/`; the notes here cover behaviour the signatures do not say.
 
-`TimeZoneSupport.status` is one of:
+`toCorrectedZonedTime` corrects an instant for display and never changes the instant it is given.
+`toCorrectedInstant` computes the instant a wall-clock reading denotes — the only direction that
+produces new data, which is why `disambiguation` belongs there and nowhere else. Both return one
+`CorrectedZonedTime`: the `instant`, the effective `timeZoneId` — the canonical named zone when
+the host is current or the zone is ungoverned, the rule's fixed `Etc/GMT` zone when the host is
+stale — the `offset` in that zone, the approved `label` with `long` and `short` forms (absent for
+ungoverned zones), and the `support` result that chose the zone.
+
+`CorrectedZonedTime.support` is per-zone support with a `status` of:
 
 - `current` — the host agrees with the rule at the probed instant, or the rule has not yet
   diverged from seasonal time there, so no correction is required.
@@ -73,23 +108,28 @@ The signatures and types live in [`src/index.ts`](./src/index.ts) and ship as de
   unaffected B.C. regional zones `America/Dawson_Creek` and `America/Fort_Nelson`.
 - `unknown` — the identifier is not a time zone the host recognizes.
 
-Governed results (`current` and `stale`) carry the canonical `timeZoneId`, `ruleId`,
-`expectedOffset`, `observedOffset`, and `firstDivergence`.
+Governed results (`current` and `stale`) carry the canonical `timeZoneId` and the `ruleId` that
+classified them; the other statuses carry the `timeZoneId` as given.
 
-Both resolvers return the resolved `instant`, the effective `timeZoneId` — the canonical named
-zone when the host is current or the zone is ungoverned, the rule's fixed `Etc/GMT` zone when the
-host is stale — the `offset` in that zone, the approved `label` with `long` and `short` forms
-(absent for ungoverned zones and locales without one), and the `support` result that chose the
-zone. For `resolveTimeZone` that is support at the instant.
-For `resolveLocalDateTime` it is the rule-owned probe from the divergence day on, because a stale
-host repeats that day's skipped hour and mis-offsets every wall time after it, so the whole day
-must resolve in the fixed zone; before that day, seasonal host data is correct and the host's own
-disambiguation applies.
+For `toCorrectedZonedTime`, `support` is support at the instant. For `toCorrectedInstant` it is
+the rule-owned probe from the divergence day on, because a stale host repeats that day's skipped
+hour and mis-offsets every wall time after it, so the whole day must resolve in the fixed zone;
+before that day, seasonal host data is correct and the host's own disambiguation applies.
 
-Inspection never throws for a bad identifier. Resolution fails explicitly rather than guessing:
-`UnknownTimeZoneError` for an unrecognized zone, `OffsetBearingLocalDateTimeError` for a wall-clock
-time carrying a UTC offset or `Z`, and Temporal's `RangeError` for malformed instants or wall
-times and for `disambiguation: "reject"` at a repeated or skipped time.
+`inspectHostSupport()` asks whether this host's timezone data knows the rules this package
+patches. It takes no arguments and probes every rule at that rule's own first divergence, so the
+result depends on neither the caller's zone nor any instant being displayed. `HostSupport.status`
+is `stale` when any governed rule is stale, and `staleRuleIds` lists the stale rules individually
+— rules can reach a host in different tzdata releases — in rule-table order, so joining it into an
+analytics dimension yields a stable string. A host that cannot observe a governed zone at all
+counts as stale for that rule, having demonstrably not got the rule.
+
+Correction fails explicitly rather than guessing: `UnknownTimeZoneError` for an unrecognized zone,
+`OffsetBearingWallTimeError` for a wall-clock time carrying a UTC offset or `Z`, and Temporal's
+`RangeError` for malformed instants or wall times and for `disambiguation: "reject"` at a repeated
+or skipped time.
+
+Every result the package returns is frozen.
 
 ## Governed rules
 
@@ -119,9 +159,9 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 
 - This is not a timezone database. It corrects only the legislated changes above; every other
   zone passes through to the host.
-- Only `en-CA` labels are bundled. Supply other locales through `createTimeZoneHotpatch`.
+- Only the approved English labels are bundled.
 - It formats nothing. Applications format the corrected `instant` in the effective `timeZoneId`.
-- `resolveLocalDateTime` trusts the host's own disambiguation before the divergence day, so a
+- `toCorrectedInstant` trusts the host's own disambiguation before the divergence day, so a
   host whose seasonal data is wrong for earlier years is not corrected.
 
 ## Ownership and removal
@@ -134,42 +174,6 @@ Each rule is temporary. Once host timezone data for a jurisdiction is current ac
 populations that telemetry reports on, its rule is deprecated in this README for one minor
 release and then removed in the next major release, at which point the zone reports
 `not_applicable`. Consumers should not rely on a rule outliving the stale hosts it exists for.
-
-## Translation configuration
-
-`defaultConfig.translations` ships approved `en-CA` labels keyed by locale and `ruleId`.
-`createTimeZoneHotpatch({ translations, fallbackLocale })` merges supplied labels over the defaults
-per locale and rule, and `fallbackLocale` names the locale used when a requested one has no label.
-Requested locales are tried in order and canonicalized; a rule with no label in any of them has
-no `label` in results. Each label carries a `long` and a `short` form. Configuration changes
-labels only — rules, offsets, and inspection behaviour are
-fixed. Instances and `defaultConfig` are frozen.
-
-```ts
-import { createTimeZoneHotpatch } from "@clhbid/canadian-time-zone-hotpatch";
-
-const hotpatch = createTimeZoneHotpatch({
-  translations: {
-    "fr-CA": {
-      "ab-permanent-time-2026": { long: "Heure de l'Alberta", short: "HA" }
-    }
-  }
-});
-hotpatch.resolveTimeZone({
-  instant: "2026-11-15T12:00:00Z",
-  timeZoneId: "America/Edmonton",
-  locale: "fr-CA"
-}).label; // => { long: "Heure de l'Alberta", short: "HA" }
-```
-
-## Telemetry-safe fields
-
-`inspectTimeZoneSupport({ timeZoneId })` without an `instant` probes at the rule's own
-`firstDivergenceInstant`, so `status`, `ruleId`, `expectedOffset`, `observedOffset`, and
-`firstDivergence` depend only on the host's timezone data. They carry no user input and no
-identifying information, and are safe to aggregate across hosts as a measure of how many users
-still run stale data. Use one event per governed zone; `not_applicable` and `unknown` carry only
-`status` and the `timeZoneId` as given.
 
 ## Compatibility
 

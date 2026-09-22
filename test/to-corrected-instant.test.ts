@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  OffsetBearingLocalDateTimeError,
-  resolveLocalDateTime,
+  OffsetBearingWallTimeError,
+  toCorrectedInstant,
   UnknownTimeZoneError
 } from "../src/index.js";
 import type { Disambiguation } from "../src/types.js";
@@ -26,14 +26,14 @@ const disambiguations: readonly Disambiguation[] = [
   "reject"
 ];
 
-describe("resolveLocalDateTime", () => {
+describe("toCorrectedInstant", () => {
   describe("on the divergence day", () => {
     it.each(disambiguations)(
       "produces the legislated instant on a stale host under %s",
       (disambiguation) => {
         // A stale host repeats 01:00–02:00 that morning; the rule does not.
-        const result = resolveLocalDateTime({
-          localDateTime: "2026-11-01T01:30:00",
+        const result = toCorrectedInstant({
+          wallTime: "2026-11-01T01:30:00",
           timeZoneId: "America/Edmonton",
           disambiguation
         });
@@ -49,8 +49,8 @@ describe("resolveLocalDateTime", () => {
       "keeps the canonical zone on an updated host under %s",
       (disambiguation) => {
         hostState.tzdata = "current";
-        const result = resolveLocalDateTime({
-          localDateTime: "2026-11-01T01:30:00",
+        const result = toCorrectedInstant({
+          wallTime: "2026-11-01T01:30:00",
           timeZoneId: "America/Edmonton",
           disambiguation
         });
@@ -69,8 +69,8 @@ describe("resolveLocalDateTime", () => {
     ] as const)(
       "resolves a nonexistent spring-forward time under %s",
       (disambiguation, instant, offset) => {
-        const result = resolveLocalDateTime({
-          localDateTime: "2026-03-08T02:30:00",
+        const result = toCorrectedInstant({
+          wallTime: "2026-03-08T02:30:00",
           timeZoneId: "America/Edmonton",
           disambiguation
         });
@@ -88,8 +88,8 @@ describe("resolveLocalDateTime", () => {
     ] as const)(
       "resolves an ambiguous fall-back time under %s",
       (disambiguation, instant, offset) => {
-        const result = resolveLocalDateTime({
-          localDateTime: "2025-11-02T01:30:00",
+        const result = toCorrectedInstant({
+          wallTime: "2025-11-02T01:30:00",
           timeZoneId: "America/Edmonton",
           disambiguation
         });
@@ -100,10 +100,10 @@ describe("resolveLocalDateTime", () => {
 
     it.each(["2026-03-08T02:30:00", "2025-11-02T01:30:00"])(
       "rejects %s under reject with a RangeError that is not an unknown zone",
-      (localDateTime) => {
+      (wallTime) => {
         const attempt = () =>
-          resolveLocalDateTime({
-            localDateTime,
+          toCorrectedInstant({
+            wallTime,
             timeZoneId: "America/Edmonton",
             disambiguation: "reject"
           });
@@ -120,8 +120,8 @@ describe("resolveLocalDateTime", () => {
   ])(
     "corrects %s wall times after divergence via %s",
     (timeZoneId, fixed, instant) => {
-      const result = resolveLocalDateTime({
-        localDateTime: "2026-12-25T10:00:00",
+      const result = toCorrectedInstant({
+        wallTime: "2026-12-25T10:00:00",
         timeZoneId,
         disambiguation: "compatible"
       });
@@ -131,8 +131,8 @@ describe("resolveLocalDateTime", () => {
   );
 
   it("normalizes aliases", () => {
-    const result = resolveLocalDateTime({
-      localDateTime: "2026-06-01T10:00:00",
+    const result = toCorrectedInstant({
+      wallTime: "2026-06-01T10:00:00",
       timeZoneId: "Canada/Mountain",
       disambiguation: "compatible"
     });
@@ -141,21 +141,21 @@ describe("resolveLocalDateTime", () => {
   });
 
   it("applies the host's own disambiguation to an ungoverned zone", () => {
-    const resolve = (disambiguation: Disambiguation) =>
-      resolveLocalDateTime({
-        localDateTime: "2025-11-02T01:30:00",
+    const correct = (disambiguation: Disambiguation) =>
+      toCorrectedInstant({
+        wallTime: "2025-11-02T01:30:00",
         timeZoneId: "America/Toronto",
         disambiguation
       });
-    expect(resolve("earlier").instant).toBe("2025-11-02T05:30:00Z");
-    expect(resolve("later").instant).toBe("2025-11-02T06:30:00Z");
-    expect(() => resolve("reject")).toThrow(RangeError);
-    expect(() => resolve("reject")).not.toThrow(UnknownTimeZoneError);
+    expect(correct("earlier").instant).toBe("2025-11-02T05:30:00Z");
+    expect(correct("later").instant).toBe("2025-11-02T06:30:00Z");
+    expect(() => correct("reject")).toThrow(RangeError);
+    expect(() => correct("reject")).not.toThrow(UnknownTimeZoneError);
   });
 
   it("passes an ungoverned zone through to the host without a label", () => {
-    const result = resolveLocalDateTime({
-      localDateTime: "2026-12-25T10:00:00",
+    const result = toCorrectedInstant({
+      wallTime: "2026-12-25T10:00:00",
       timeZoneId: "America/Dawson_Creek",
       disambiguation: "compatible"
     });
@@ -169,8 +169,8 @@ describe("resolveLocalDateTime", () => {
 
   it("throws for an unknown zone rather than choosing a jurisdiction", () => {
     expect(() =>
-      resolveLocalDateTime({
-        localDateTime: "2026-12-25T10:00:00",
+      toCorrectedInstant({
+        wallTime: "2026-12-25T10:00:00",
         timeZoneId: "Not/AZone",
         disambiguation: "compatible"
       })
@@ -183,20 +183,20 @@ describe("resolveLocalDateTime", () => {
     "2026-11-01T01:30:00+00:00[America/Edmonton]",
     "2026-11-01 01:30-0700",
     "2026-11-01T01:30:00+99:00"
-  ])("rejects the offset-bearing wall time %s", (localDateTime) => {
+  ])("rejects the offset-bearing wall time %s", (wallTime) => {
     expect(() =>
-      resolveLocalDateTime({
-        localDateTime,
+      toCorrectedInstant({
+        wallTime,
         timeZoneId: "America/Edmonton",
         disambiguation: "compatible"
       })
-    ).toThrow(OffsetBearingLocalDateTimeError);
+    ).toThrow(OffsetBearingWallTimeError);
   });
 
   it("throws RangeError for a malformed wall time", () => {
     expect(() =>
-      resolveLocalDateTime({
-        localDateTime: "not-a-date-time",
+      toCorrectedInstant({
+        wallTime: "not-a-date-time",
         timeZoneId: "America/Edmonton",
         disambiguation: "compatible"
       })

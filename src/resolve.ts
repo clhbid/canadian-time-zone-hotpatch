@@ -9,20 +9,18 @@
 import type { HostInstant, HostPlainDateTime } from "./host.js";
 import { observeInstant, observeOffset } from "./host.js";
 import { inspectTimeZoneSupport } from "./inspect.js";
+import type { TimeZoneRule } from "./rules.js";
 import { findRule } from "./rules.js";
 import { Temporal } from "./temporal.js";
-import { resolveLabel } from "./translations.js";
+import { labels } from "./translations.js";
 import type {
-  HotpatchConfig,
-  ResolvedLocalDateTime,
-  ResolvedTimeZone,
-  ResolveLocalDateTimeInput,
-  ResolveTimeZoneInput,
-  TimeZoneRule,
-  TimeZoneSupport
+  CorrectedZonedTime,
+  TimeZoneSupport,
+  ToCorrectedInstantInput,
+  ToCorrectedZonedTimeInput
 } from "./types.js";
 
-/** Thrown when resolution is asked for a zone the host does not recognize. */
+/** Thrown when correction is asked for a zone the host does not recognize. */
 export class UnknownTimeZoneError extends RangeError {
   constructor(timeZoneId: string) {
     super(`Cannot resolve unknown time zone identifier: "${timeZoneId}"`);
@@ -31,13 +29,13 @@ export class UnknownTimeZoneError extends RangeError {
 }
 
 /** Thrown when a wall-clock date-time carries a UTC offset or `Z` designator. */
-export class OffsetBearingLocalDateTimeError extends RangeError {
-  constructor(localDateTime: string) {
+export class OffsetBearingWallTimeError extends RangeError {
+  constructor(wallTime: string) {
     super(
-      `Local date-time must not carry a UTC offset or "Z": "${localDateTime}". ` +
-        "Use resolveTimeZone to resolve an instant."
+      `Wall-clock time must not carry a UTC offset or "Z": "${wallTime}". ` +
+        "Use toCorrectedZonedTime to display an instant."
     );
-    this.name = "OffsetBearingLocalDateTimeError";
+    this.name = "OffsetBearingWallTimeError";
   }
 }
 
@@ -45,48 +43,44 @@ export class OffsetBearingLocalDateTimeError extends RangeError {
 const offsetDesignator = /[Tt ].*(?:[Zz]|[+-]\d{2}(?::?\d{2})?)$/;
 
 /**
- * Resolves an instant for display. Throws `UnknownTimeZoneError` for a zone
- * the host does not recognize and Temporal's `RangeError` for a malformed
- * instant.
+ * Corrects an instant for display; the instant itself never changes. Throws
+ * `UnknownTimeZoneError` for a zone the host does not recognize and
+ * Temporal's `RangeError` for a malformed instant.
  */
-export function resolveTimeZone(
-  config: HotpatchConfig,
-  input: ResolveTimeZoneInput
-): ResolvedTimeZone {
-  const support = inspectTimeZoneSupport(input);
+export function toCorrectedZonedTime(
+  input: ToCorrectedZonedTimeInput
+): CorrectedZonedTime {
+  const support = inspectTimeZoneSupport(input.timeZoneId, input.instant);
   if (support.status === "unknown") {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
   const rule = findRule(support.timeZoneId);
-  return toResolvedTimeZone(
-    config,
+  return toCorrected(
     Temporal.Instant.from(input.instant),
     effectiveTimeZoneId(support, rule),
-    support,
-    input.locale
+    support
   );
 }
 
 /**
- * Resolves a wall-clock time to the instant it denotes. Throws
- * `OffsetBearingLocalDateTimeError` when the input carries a UTC offset or
- * `Z`, `UnknownTimeZoneError` for a zone the host does not recognize, and
+ * Computes the instant a wall-clock reading denotes. Throws
+ * `OffsetBearingWallTimeError` when the input carries a UTC offset or `Z`,
+ * `UnknownTimeZoneError` for a zone the host does not recognize, and
  * Temporal's `RangeError` for a malformed wall time or, under `reject`, a
  * repeated or skipped one.
  */
-export function resolveLocalDateTime(
-  config: HotpatchConfig,
-  input: ResolveLocalDateTimeInput
-): ResolvedLocalDateTime {
+export function toCorrectedInstant(
+  input: ToCorrectedInstantInput
+): CorrectedZonedTime {
   // `Temporal.PlainDateTime.from` discards a numeric offset silently, even an
   // invalid one, which would quietly reinterpret a supplied instant as wall
   // time.
-  if (offsetDesignator.test(input.localDateTime.replace(/\[.*$/, ""))) {
-    throw new OffsetBearingLocalDateTimeError(input.localDateTime);
+  if (offsetDesignator.test(input.wallTime.replace(/\[.*$/, ""))) {
+    throw new OffsetBearingWallTimeError(input.wallTime);
   }
-  const local = Temporal.PlainDateTime.from(input.localDateTime);
+  const local = Temporal.PlainDateTime.from(input.wallTime);
 
-  const probe = inspectTimeZoneSupport({ timeZoneId: input.timeZoneId });
+  const probe = inspectTimeZoneSupport(input.timeZoneId);
   if (probe.status === "unknown") {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
@@ -105,11 +99,8 @@ export function resolveLocalDateTime(
   const instant = observeInstant(timeZoneId, local, input.disambiguation);
   const support = probeDecides
     ? probe
-    : inspectTimeZoneSupport({
-        timeZoneId: probe.timeZoneId,
-        instant: instant.toString()
-      });
-  return toResolvedTimeZone(config, instant, timeZoneId, support, input.locale);
+    : inspectTimeZoneSupport(probe.timeZoneId, instant.toString());
+  return toCorrected(instant, timeZoneId, support);
 }
 
 /** The zone that computes correct offsets: the rule's fixed zone on a stale host, else the zone itself. */
@@ -132,26 +123,16 @@ function isBeforeDivergenceDate(
   return Temporal.PlainDate.compare(local.toPlainDate(), divergenceDate) < 0;
 }
 
-function toResolvedTimeZone(
-  config: HotpatchConfig,
+function toCorrected(
   instant: HostInstant,
   timeZoneId: string,
-  support: TimeZoneSupport,
-  locale: Intl.LocalesArgument | undefined
-): ResolvedTimeZone {
+  support: TimeZoneSupport
+): CorrectedZonedTime {
   const offset = observeOffset(timeZoneId, instant);
   if (offset === undefined) {
     throw new UnknownTimeZoneError(timeZoneId);
   }
-  const label =
-    "ruleId" in support
-      ? resolveLabel(
-          config.translations,
-          config.fallbackLocale,
-          support.ruleId,
-          locale
-        )
-      : undefined;
+  const label = "ruleId" in support ? labels[support.ruleId] : undefined;
   return Object.freeze({
     instant: instant.toString(),
     timeZoneId,
