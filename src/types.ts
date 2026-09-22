@@ -27,9 +27,15 @@ export interface TimeZoneRule {
   readonly firstDivergenceInstant: string;
 }
 
+/** Approved display names for a governed zone, e.g. `"Alberta Time"` and `"ABT"`. */
+export interface TimeZoneLabel {
+  readonly long: string;
+  readonly short: string;
+}
+
 /** A locale-keyed dictionary of rule-id-keyed labels. */
 export type TranslationDictionary = Readonly<
-  Record<string, Readonly<Partial<Record<RuleId, string>>>>
+  Record<string, Readonly<Partial<Record<RuleId, TimeZoneLabel>>>>
 >;
 
 /**
@@ -93,8 +99,66 @@ export interface HotpatchConfig {
   readonly fallbackLocale: string;
 }
 
+/** Temporal's disambiguation modes for ambiguous or nonexistent wall-clock times. */
+export type Disambiguation = "compatible" | "earlier" | "later" | "reject";
+
+/** Input to {@link TimeZoneHotpatch.resolveTimeZone}. */
+export interface ResolveTimeZoneInput {
+  /** ISO 8601 instant to resolve, e.g. `"2026-11-15T12:00:00Z"`. */
+  readonly instant: string;
+  /** IANA time zone identifier, matched case-insensitively; aliases are accepted. */
+  readonly timeZoneId: string;
+  /** Locale(s) for the label, in preference order; falls back to the configured locale. */
+  readonly locale?: Intl.LocalesArgument;
+}
+
+/** Input to {@link TimeZoneHotpatch.resolveLocalDateTime}. */
+export interface ResolveLocalDateTimeInput {
+  /**
+   * ISO 8601 wall-clock date-time, e.g. `"2026-11-01T01:30:00"`. A UTC
+   * offset or `Z` designator is rejected: a wall-clock time has no offset of
+   * its own, and silently discarding one would reinterpret an instant.
+   */
+  readonly localDateTime: string;
+  /** IANA time zone identifier, matched case-insensitively; aliases are accepted. */
+  readonly timeZoneId: string;
+  /** How to resolve a wall-clock time the effective zone repeats or skips. */
+  readonly disambiguation: Disambiguation;
+  /** Locale(s) for the label, in preference order; falls back to the configured locale. */
+  readonly locale?: Intl.LocalesArgument;
+}
+
+/** A corrected instant together with the zone that produced it. */
+export interface ResolvedTimeZone {
+  /** The resolved instant in ISO 8601 UTC form. */
+  readonly instant: string;
+  /**
+   * The zone used to compute `offset`: the canonical named zone when the
+   * host is current or the zone is ungoverned, or the rule's fixed `Etc/GMT`
+   * zone when the host is stale.
+   */
+  readonly timeZoneId: string;
+  /** UTC offset at `instant` in the effective zone, e.g. `"-06:00"`. */
+  readonly offset: string;
+  /** Approved label for the governing rule; absent for ungoverned zones and unlabelled locales. */
+  readonly label?: TimeZoneLabel;
+  /**
+   * The inspection that chose `timeZoneId`: `stale` exactly when the fixed
+   * zone was used. For an instant this is support at that instant; for a
+   * wall-clock time on or after the divergence day it is the rule-owned probe.
+   */
+  readonly support: TimeZoneSupport;
+}
+
+/** A corrected instant for a wall-clock time, together with the zone that produced it. */
+export type ResolvedLocalDateTime = ResolvedTimeZone;
+
 /** A configured, immutable instance exposing the same behaviour as the package root. */
 export interface TimeZoneHotpatch {
   readonly config: HotpatchConfig;
   inspectTimeZoneSupport(input: InspectTimeZoneSupportInput): TimeZoneSupport;
+  /** Resolves an instant for display, correcting the zone when the host is stale. */
+  resolveTimeZone(input: ResolveTimeZoneInput): ResolvedTimeZone;
+  /** Resolves a wall-clock time to the legislated instant, correcting when the host is stale. */
+  resolveLocalDateTime(input: ResolveLocalDateTimeInput): ResolvedLocalDateTime;
 }

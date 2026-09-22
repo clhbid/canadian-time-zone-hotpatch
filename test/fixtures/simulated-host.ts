@@ -15,7 +15,9 @@
  *       simulatedHostModule(await importOriginal(), hostState)
  *     );
  */
+import type { HostInstant, HostPlainDateTime } from "../../src/host.js";
 import type * as hostModule from "../../src/host.js";
+import type { Disambiguation } from "../../src/types.js";
 
 export type HostModule = typeof hostModule;
 
@@ -114,6 +116,51 @@ export function simulateHostOffset(
     : zone.standard;
 }
 
+const day = 86_400_000;
+
+/**
+ * Instant a simulated host assigns to the wall-clock time `local`, following
+ * Temporal's disambiguation semantics against the simulated offsets, or
+ * `undefined` for a zone this fixture does not model.
+ */
+export function simulateHostInstant(
+  tzdata: SimulatedTzdata,
+  timeZoneId: string,
+  local: HostPlainDateTime,
+  disambiguation: Disambiguation
+): HostInstant | undefined {
+  const wall = local.toZonedDateTime("UTC").toInstant();
+  const at = (offset: string) =>
+    wall.subtract({ milliseconds: offsetToMilliseconds(offset) });
+  const offsetAt = (instant: HostInstant) =>
+    simulateHostOffset(tzdata, timeZoneId, instant.epochMilliseconds);
+
+  // Like Temporal, the candidates are the offsets in force a day either side
+  // of the wall time; one is valid only if the host reports it at the
+  // instant it produces. The offset before a fall-back yields the earlier.
+  const offsetBefore = offsetAt(wall.subtract({ milliseconds: day }));
+  const offsetAfter = offsetAt(wall.add({ milliseconds: day }));
+  if (offsetBefore === undefined || offsetAfter === undefined) {
+    return undefined;
+  }
+  const [earlier, later] = [...new Set([offsetBefore, offsetAfter])].filter(
+    (offset) => offsetAt(at(offset)) === offset
+  );
+
+  if (earlier !== undefined && later === undefined) {
+    return at(earlier);
+  }
+  if (disambiguation === "reject") {
+    throw new RangeError(`${earlier ? "Ambiguous" : "Nonexistent"} time`);
+  }
+  if (earlier !== undefined && later !== undefined) {
+    return at(disambiguation === "later" ? later : earlier);
+  }
+  // A gap: `earlier` applies the offset in force after it, the others the
+  // offset in force before it.
+  return at(disambiguation === "earlier" ? offsetAfter : offsetBefore);
+}
+
 /**
  * Builds a replacement for `src/host.ts` whose observations for governed
  * zones come from `state.tzdata`, and from the real host for everything else.
@@ -136,6 +183,12 @@ export function simulatedHostModule(
           timeZoneId,
           instant.epochMilliseconds
         ) ?? actual.observeOffset(timeZoneId, instant)
+      );
+    },
+    observeInstant(timeZoneId, local, disambiguation) {
+      return (
+        simulateHostInstant(state.tzdata, timeZoneId, local, disambiguation) ??
+        actual.observeInstant(timeZoneId, local, disambiguation)
       );
     }
   };

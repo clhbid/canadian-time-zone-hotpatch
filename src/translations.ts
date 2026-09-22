@@ -5,13 +5,22 @@
  * add or override *labels* — it cannot alter offset rules, which are owned
  * exclusively by {@link rules}.
  */
-import type { RuleId, TranslationDictionary } from "./types.js";
+import type { RuleId, TimeZoneLabel, TranslationDictionary } from "./types.js";
 
 export const defaultTranslations: TranslationDictionary = Object.freeze({
   "en-CA": Object.freeze({
-    "ab-permanent-time-2026": "Alberta Time (ABT)",
-    "bc-permanent-time-2026": "Pacific Time (PCT)",
-    "mb-permanent-time-2026": "Manitoba Time (MBT)"
+    "ab-permanent-time-2026": Object.freeze({
+      long: "Alberta Time",
+      short: "ABT"
+    }),
+    "bc-permanent-time-2026": Object.freeze({
+      long: "Pacific Time",
+      short: "PCT"
+    }),
+    "mb-permanent-time-2026": Object.freeze({
+      long: "Manitoba Time",
+      short: "MBT"
+    })
   })
 });
 
@@ -29,7 +38,10 @@ export function mergeTranslations(
   if (!overrides) {
     return base;
   }
-  const merged: Record<string, Readonly<Partial<Record<RuleId, string>>>> = {};
+  const merged: Record<
+    string,
+    Readonly<Partial<Record<RuleId, TimeZoneLabel>>>
+  > = {};
   for (const locale of new Set([
     ...Object.keys(base),
     ...Object.keys(overrides)
@@ -44,21 +56,21 @@ export function mergeTranslations(
 
 /**
  * Resolves the approved label for `ruleId` in `locale`, falling back to
- * `fallbackLocale`, and finally to the bare `ruleId` if no label is found.
+ * `fallbackLocale`; `undefined` when neither has one.
  */
 export function resolveLabel(
   translations: TranslationDictionary,
   fallbackLocale: string,
   ruleId: RuleId,
   locale?: Intl.LocalesArgument
-): string {
+): TimeZoneLabel | undefined {
   for (const candidate of localeCandidates(locale, fallbackLocale)) {
     const label = translations[candidate]?.[ruleId];
     if (label) {
       return label;
     }
   }
-  return ruleId;
+  return undefined;
 }
 
 function localeCandidates(
