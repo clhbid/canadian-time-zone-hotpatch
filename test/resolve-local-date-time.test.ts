@@ -140,6 +140,19 @@ describe("resolveLocalDateTime", () => {
     expect(result.support.timeZoneId).toBe("America/Edmonton");
   });
 
+  it("applies the host's own disambiguation to an ungoverned zone", () => {
+    const resolve = (disambiguation: Disambiguation) =>
+      resolveLocalDateTime({
+        localDateTime: "2025-11-02T01:30:00",
+        timeZoneId: "America/Toronto",
+        disambiguation
+      });
+    expect(resolve("earlier").instant).toBe("2025-11-02T05:30:00Z");
+    expect(resolve("later").instant).toBe("2025-11-02T06:30:00Z");
+    expect(() => resolve("reject")).toThrow(RangeError);
+    expect(() => resolve("reject")).not.toThrow(UnknownTimeZoneError);
+  });
+
   it("passes an ungoverned zone through to the host without a label", () => {
     const result = resolveLocalDateTime({
       localDateTime: "2026-12-25T10:00:00",
@@ -168,7 +181,8 @@ describe("resolveLocalDateTime", () => {
     "2026-11-01T01:30:00Z",
     "2026-11-01T01:30:00-07:00",
     "2026-11-01T01:30:00+00:00[America/Edmonton]",
-    "2026-11-01 01:30-0700"
+    "2026-11-01 01:30-0700",
+    "2026-11-01T01:30:00+99:00"
   ])("rejects the offset-bearing wall time %s", (localDateTime) => {
     expect(() =>
       resolveLocalDateTime({

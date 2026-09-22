@@ -96,6 +96,7 @@ export interface HotpatchConfig {
 /** Temporal's disambiguation modes for ambiguous or nonexistent wall-clock times. */
 export type Disambiguation = "compatible" | "earlier" | "later" | "reject";
 
+/** Input to {@link TimeZoneHotpatch.resolveTimeZone}. */
 export interface ResolveTimeZoneInput {
   /** ISO 8601 instant to resolve, e.g. `"2026-11-15T12:00:00Z"`. */
   readonly instant: string;
@@ -105,6 +106,7 @@ export interface ResolveTimeZoneInput {
   readonly locale?: Intl.LocalesArgument;
 }
 
+/** Input to {@link TimeZoneHotpatch.resolveLocalDateTime}. */
 export interface ResolveLocalDateTimeInput {
   /**
    * ISO 8601 wall-clock date-time, e.g. `"2026-11-01T01:30:00"`. A UTC

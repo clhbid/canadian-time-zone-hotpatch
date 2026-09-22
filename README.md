@@ -84,7 +84,24 @@ createTimeZoneHotpatch(
 ): TimeZoneHotpatch;
 
 defaultConfig: HotpatchConfig;
+
+interface ResolvedTimeZone {
+  instant: string; // ISO 8601 UTC
+  timeZoneId: string; // the zone that produced `offset`
+  offset: string; // e.g. "-06:00"
+  label?: string; // approved label; absent for ungoverned zones
+  support: TimeZoneSupport;
+}
+type ResolvedLocalDateTime = ResolvedTimeZone;
+
+interface TimeZoneHotpatch {
+  config: HotpatchConfig; // { rules, translations, fallbackLocale }, frozen
+  inspectTimeZoneSupport, resolveTimeZone, resolveLocalDateTime; // as above
+}
 ```
+
+The public types `RuleId`, `TimeZoneRule`, `TimeZoneSupport`, `TimeZoneSupportStatus`,
+`Disambiguation`, `TranslationDictionary`, and each function's input type are exported alongside.
 
 `TimeZoneSupport.status` is one of:
 

@@ -41,6 +41,14 @@ export class OffsetBearingLocalDateTimeError extends RangeError {
   }
 }
 
+/** A UTC offset or `Z` closing the time part, ahead of any bracketed annotation. */
+const offsetDesignator = /[Tt ].*(?:[Zz]|[+-]\d{2}(?::?\d{2})?)$/;
+
+/**
+ * Resolves an instant for display. Throws `UnknownTimeZoneError` for a zone
+ * the host does not recognize and Temporal's `RangeError` for a malformed
+ * instant.
+ */
 export function resolveTimeZone(
   config: HotpatchConfig,
   input: ResolveTimeZoneInput
@@ -50,7 +58,7 @@ export function resolveTimeZone(
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
   const rule = findRule(support.timeZoneId);
-  return resolved(
+  return toResolvedTimeZone(
     config,
     Temporal.Instant.from(input.instant),
     effectiveTimeZoneId(support, rule),
@@ -59,13 +67,21 @@ export function resolveTimeZone(
   );
 }
 
+/**
+ * Resolves a wall-clock time to the instant it denotes. Throws
+ * `OffsetBearingLocalDateTimeError` when the input carries a UTC offset or
+ * `Z`, `UnknownTimeZoneError` for a zone the host does not recognize, and
+ * Temporal's `RangeError` for a malformed wall time or, under `reject`, a
+ * repeated or skipped one.
+ */
 export function resolveLocalDateTime(
   config: HotpatchConfig,
   input: ResolveLocalDateTimeInput
 ): ResolvedLocalDateTime {
-  // `Temporal.PlainDateTime.from` discards a numeric offset silently, which
-  // would quietly reinterpret a supplied instant as wall time.
-  if (parsesAsInstant(input.localDateTime)) {
+  // `Temporal.PlainDateTime.from` discards a numeric offset silently, even an
+  // invalid one, which would quietly reinterpret a supplied instant as wall
+  // time.
+  if (offsetDesignator.test(input.localDateTime.replace(/\[.*$/, ""))) {
     throw new OffsetBearingLocalDateTimeError(input.localDateTime);
   }
   const local = Temporal.PlainDateTime.from(input.localDateTime);
@@ -93,17 +109,7 @@ export function resolveLocalDateTime(
         timeZoneId: probe.timeZoneId,
         instant: instant.toString()
       });
-  return resolved(config, instant, timeZoneId, support, input.locale);
-}
-
-/** Temporal's own grammar decides what bears an offset: whatever parses as an instant. */
-function parsesAsInstant(value: string): boolean {
-  try {
-    Temporal.Instant.from(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return toResolvedTimeZone(config, instant, timeZoneId, support, input.locale);
 }
 
 /** The zone that computes correct offsets: the rule's fixed zone on a stale host, else the zone itself. */
@@ -120,13 +126,13 @@ function isBeforeDivergenceDate(
   rule: TimeZoneRule,
   local: HostPlainDateTime
 ): boolean {
-  const divergenceDate = Temporal.Instant.from(rule.firstDivergenceInstant)
-    .toZonedDateTimeISO(rule.fixedTimeZoneId)
-    .toPlainDate();
+  // The rule's instant is written in local time, so its wall date needs no
+  // host zone data.
+  const divergenceDate = Temporal.PlainDate.from(rule.firstDivergenceInstant);
   return Temporal.PlainDate.compare(local.toPlainDate(), divergenceDate) < 0;
 }
 
-function resolved(
+function toResolvedTimeZone(
   config: HotpatchConfig,
   instant: HostInstant,
   timeZoneId: string,
