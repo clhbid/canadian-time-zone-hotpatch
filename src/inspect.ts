@@ -7,7 +7,7 @@
  */
 import { isKnownTimeZoneId, observeOffset } from "./host.js";
 import { findRule, rules } from "./rules.js";
-import { Temporal } from "./temporal.js";
+import type { TemporalNamespace } from "./temporal.js";
 import type { HostSupport, TimeZoneSupport } from "./types.js";
 
 /**
@@ -20,19 +20,22 @@ import type { HostSupport, TimeZoneSupport } from "./types.js";
  * `RangeError` Temporal raises for it.
  */
 export function inspectTimeZoneSupport(
+  temporal: TemporalNamespace,
   timeZoneId: string,
   instant?: string
 ): TimeZoneSupport {
   const rule = findRule(timeZoneId);
   if (!rule) {
     return Object.freeze({
-      status: isKnownTimeZoneId(timeZoneId) ? "not_applicable" : "unknown",
+      status: isKnownTimeZoneId(temporal, timeZoneId)
+        ? "not_applicable"
+        : "unknown",
       timeZoneId
     });
   }
 
-  const firstDivergence = Temporal.Instant.from(rule.firstDivergenceInstant);
-  const probe = instant ? Temporal.Instant.from(instant) : firstDivergence;
+  const firstDivergence = temporal.Instant.from(rule.firstDivergenceInstant);
+  const probe = instant ? temporal.Instant.from(instant) : firstDivergence;
 
   const observedOffset = observeOffset(rule.canonicalTimeZoneId, probe);
   if (observedOffset === undefined) {
@@ -44,7 +47,7 @@ export function inspectTimeZoneSupport(
   // Before first divergence a seasonal host is still correct by definition,
   // so whatever it reports is what the rule expects and no correction is due.
   const expectedOffset =
-    Temporal.Instant.compare(probe, firstDivergence) < 0
+    temporal.Instant.compare(probe, firstDivergence) < 0
       ? observedOffset
       : rule.offset;
 
@@ -61,11 +64,12 @@ export function inspectTimeZoneSupport(
  * that cannot observe a governed zone at all counts as stale for that rule,
  * since it cannot be assured to handle the zone correctly.
  */
-export function inspectHostSupport(): HostSupport {
+export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
   const staleRuleIds = rules
     .filter(
       (rule) =>
-        inspectTimeZoneSupport(rule.canonicalTimeZoneId).status !== "current"
+        inspectTimeZoneSupport(temporal, rule.canonicalTimeZoneId).status !==
+        "current"
     )
     .map((rule) => rule.ruleId);
   return Object.freeze({

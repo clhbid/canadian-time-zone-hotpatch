@@ -12,7 +12,7 @@ import { inspectTimeZoneSupport } from "./inspect.js";
 import { labels } from "./labels.js";
 import type { TimeZoneRule } from "./rules.js";
 import { findRule } from "./rules.js";
-import { Temporal } from "./temporal.js";
+import type { TemporalNamespace } from "./temporal.js";
 import type {
   CorrectedZonedTime,
   TimeZoneSupport,
@@ -56,15 +56,20 @@ function carriesOffsetDesignator(wallTime: string): boolean {
  * Temporal's `RangeError` for a malformed instant.
  */
 export function toCorrectedZonedTime(
+  temporal: TemporalNamespace,
   input: ToCorrectedZonedTimeInput
 ): CorrectedZonedTime {
-  const support = inspectTimeZoneSupport(input.timeZoneId, input.instant);
+  const support = inspectTimeZoneSupport(
+    temporal,
+    input.timeZoneId,
+    input.instant
+  );
   if (support.status === "unknown") {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
   const rule = findRule(support.timeZoneId);
   return toCorrected(
-    Temporal.Instant.from(input.instant),
+    temporal.Instant.from(input.instant),
     effectiveTimeZoneId(support, rule),
     support
   );
@@ -78,6 +83,7 @@ export function toCorrectedZonedTime(
  * repeated or skipped one.
  */
 export function toCorrectedInstant(
+  temporal: TemporalNamespace,
   input: ToCorrectedInstantInput
 ): CorrectedZonedTime {
   // `Temporal.PlainDateTime.from` discards a numeric offset silently, even an
@@ -86,9 +92,9 @@ export function toCorrectedInstant(
   if (carriesOffsetDesignator(input.wallTime)) {
     throw new OffsetBearingWallTimeError(input.wallTime);
   }
-  const local = Temporal.PlainDateTime.from(input.wallTime);
+  const local = temporal.PlainDateTime.from(input.wallTime);
 
-  const probe = inspectTimeZoneSupport(input.timeZoneId);
+  const probe = inspectTimeZoneSupport(temporal, input.timeZoneId);
   if (probe.status === "unknown") {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
@@ -99,7 +105,7 @@ export function toCorrectedInstant(
   // the host's own disambiguation applies.
   const rule = findRule(probe.timeZoneId);
   const probeDecides =
-    rule !== undefined && !isBeforeDivergenceDate(rule, local);
+    rule !== undefined && !isBeforeDivergenceDate(temporal, rule, local);
   const timeZoneId = probeDecides
     ? effectiveTimeZoneId(probe, rule)
     : probe.timeZoneId;
@@ -107,7 +113,7 @@ export function toCorrectedInstant(
   const instant = observeInstant(timeZoneId, local, input.disambiguation);
   const support = probeDecides
     ? probe
-    : inspectTimeZoneSupport(probe.timeZoneId, instant.toString());
+    : inspectTimeZoneSupport(temporal, probe.timeZoneId, instant.toString());
   return toCorrected(instant, timeZoneId, support);
 }
 
@@ -122,13 +128,14 @@ function effectiveTimeZoneId(
 }
 
 function isBeforeDivergenceDate(
+  temporal: TemporalNamespace,
   rule: TimeZoneRule,
   local: HostPlainDateTime
 ): boolean {
   // The rule's instant is written in local time, so its wall date needs no
   // host zone data.
-  const divergenceDate = Temporal.PlainDate.from(rule.firstDivergenceInstant);
-  return Temporal.PlainDate.compare(local.toPlainDate(), divergenceDate) < 0;
+  const divergenceDate = temporal.PlainDate.from(rule.firstDivergenceInstant);
+  return temporal.PlainDate.compare(local.toPlainDate(), divergenceDate) < 0;
 }
 
 function toCorrected(

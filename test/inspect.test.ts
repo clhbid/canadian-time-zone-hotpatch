@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { inspectHostSupport } from "../src/index.js";
-import { inspectTimeZoneSupport } from "../src/inspect.js";
+import { inspectTimeZoneSupport as inspect } from "../src/inspect.js";
 import type {
   HostModule,
   SimulatedHostState,
   SimulatedTzdata
 } from "./fixtures/simulated-host.js";
+import { hotpatch, temporal } from "./fixtures/temporal.js";
+
+const { inspectHostSupport } = hotpatch;
+
+/** `inspectTimeZoneSupport` on the supplied namespace. */
+const inspectTimeZoneSupport = (timeZoneId: string, instant?: string) =>
+  inspect(temporal, timeZoneId, instant);
 
 const hostState = vi.hoisted<SimulatedHostState>(() => ({ tzdata: "stale" }));
 

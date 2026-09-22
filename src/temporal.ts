@@ -1,27 +1,64 @@
 /**
- * Resolves the Temporal implementation to use internally.
+ * The Temporal implementation the package runs on.
  *
- * Prefers a native `Temporal` global when the host provides one, and falls
- * back to `temporal-polyfill` otherwise. This module never assigns to
- * `globalThis.Temporal` (or any other global) — it only reads a value that
- * may already be there.
+ * This package supplies no implementation of its own: a compatible
+ * `Temporal` comes from the host's own global or from the caller, through
+ * `createHotpatch({ temporal })`. Nothing here ever assigns to
+ * `globalThis.Temporal` (or any other global) — the global is only read.
  */
-import { Temporal as PolyfillTemporal } from "temporal-polyfill";
+import type { Temporal } from "temporal-spec";
 
-type TemporalNamespace = typeof PolyfillTemporal;
+/** A `Temporal` namespace, native or polyfilled, this package can run on. */
+export type TemporalNamespace = typeof Temporal;
 
-function readGlobalTemporal(): TemporalNamespace | undefined {
-  const candidate = (globalThis as { Temporal?: unknown }).Temporal;
-  if (
-    candidate &&
-    typeof candidate === "object" &&
-    "Instant" in candidate &&
-    "ZonedDateTime" in candidate
-  ) {
-    return candidate as TemporalNamespace;
+/** Thrown when no compatible `Temporal` implementation is available. */
+export class MissingTemporalError extends TypeError {
+  constructor() {
+    super(
+      "No compatible Temporal implementation is available. Either provide a " +
+        "global Temporal (for example by installing a polyfill globally), or " +
+        "pass one to createHotpatch({ temporal })."
+    );
+    this.name = "MissingTemporalError";
   }
-  return undefined;
 }
 
-export const Temporal: TemporalNamespace =
-  readGlobalTemporal() ?? PolyfillTemporal;
+/** Every static this package calls; a candidate missing any of them is unusable. */
+const requiredStatics: readonly string[] = [
+  "Instant.from",
+  "Instant.fromEpochMilliseconds",
+  "Instant.compare",
+  "PlainDateTime.from",
+  "PlainDate.from",
+  "PlainDate.compare"
+];
+
+/** Whether `candidate` exposes every Temporal static this package calls. */
+function isTemporalNamespace(
+  candidate: unknown
+): candidate is TemporalNamespace {
+  if (typeof candidate !== "object" || candidate === null) {
+    return false;
+  }
+  const namespace = candidate as Record<string, Record<string, unknown>>;
+  return requiredStatics.every((path) => {
+    const [name, member] = path.split(".") as [string, string];
+    return typeof namespace[name]?.[member] === "function";
+  });
+}
+
+/** Validates `candidate`, throwing `MissingTemporalError` when it is unusable. */
+export function requireTemporal(candidate: unknown): TemporalNamespace {
+  if (!isTemporalNamespace(candidate)) {
+    throw new MissingTemporalError();
+  }
+  return candidate;
+}
+
+/**
+ * The host's own `globalThis.Temporal`. Read on every call, so a global
+ * installed after this module is imported is still picked up.
+ */
+export function requireGlobalTemporal(): TemporalNamespace {
+  return requireTemporal((globalThis as { Temporal?: unknown }).Temporal);
+}
