@@ -117,9 +117,10 @@ const event = {
 
 Read [`src/index.ts`](./src/index.ts), [`src/`](./src/), and the specs in [`test/`](./test/) for
 the shipped signatures and behavioural detail. In brief, the top-level functions read
-`globalThis.Temporal` per call, `createHotpatch({ temporal })` binds one implementation
-explicitly, and calls may throw `MissingTemporalError`, `UnknownTimeZoneError`,
-`OffsetBearingWallTimeError`, or Temporal's own `RangeError`.
+`globalThis.Temporal` per call; `createHotpatch({ temporal })` validates a supplied
+implementation eagerly at construction time and otherwise defers to the global path; and calls
+may throw `MissingTemporalError`, `UnknownTimeZoneError`, `OffsetBearingWallTimeError`, or
+Temporal's own `RangeError`.
 
 ## Governed rules
 
