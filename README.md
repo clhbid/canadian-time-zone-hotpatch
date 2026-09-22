@@ -116,16 +116,7 @@ const event = {
 ## Interface
 
 Read [`src/index.ts`](./src/index.ts), [`src/`](./src/), and the specs in [`test/`](./test/) for
-the shipped signatures and behavioural detail. In brief, the top-level functions read
-`globalThis.Temporal` per call; `createHotpatch({ temporal })` validates a supplied
-implementation eagerly at construction time and otherwise defers to the global path; and calls
-may throw `MissingTemporalError`, `UnknownTimeZoneError`, `OffsetBearingWallTimeError`, or
-Temporal's own `RangeError`. Both correction functions return a frozen `CorrectedZonedTime` with
-the corrected `instant`, effective `timeZoneId`, `offset`, optional `label`, and a `support`
-classification. `support.status` is `current`, `stale`, `not_applicable`, or `unknown`; governed
-`current` and `stale` results also carry the canonical zone and `ruleId`. `inspectHostSupport()`
-probes every governed rule at its first divergence and reports host-wide status; `stale` means one
-or more governed rules are stale, and `staleRuleIds` lists them in rule-table order.
+the shipped signatures and behavioural detail.
 
 ## Governed rules
 
