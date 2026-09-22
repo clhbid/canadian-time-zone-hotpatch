@@ -23,6 +23,7 @@ export type {
   ResolveTimeZoneInput,
   RuleId,
   TimeZoneHotpatch,
+  TimeZoneLabel,
   TimeZoneRule,
   TimeZoneSupport,
   TimeZoneSupportStatus,

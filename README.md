@@ -44,7 +44,7 @@ resolveTimeZone({
   timeZoneId: "America/Edmonton"
 });
 // => { instant: "2026-11-15T12:00:00Z", timeZoneId: "Etc/GMT+6", offset: "-06:00",
-//      label: "Alberta Time (ABT)", support: { status: "stale", ... } }
+//      label: { long: "Alberta Time", short: "ABT" }, support: { status: "stale", ... } }
 
 // Resolve a wall-clock time to the legislated instant.
 resolveLocalDateTime({
@@ -56,52 +56,13 @@ resolveLocalDateTime({
 ```
 
 Use `result.timeZoneId` and `result.offset` to format the corrected time with Temporal or `Intl`,
-and `result.label` as the approved zone name in place of the host's.
+and `result.label.long` or `result.label.short` as the approved zone name in place of the host's.
+The examples in this README are typechecked by `test/readme.test.ts`.
 
 ## Interface
 
-```ts
-inspectTimeZoneSupport(input: {
-  timeZoneId: string; // canonical id or alias, matched case-insensitively
-  instant?: string; // ISO 8601; omit for the rule-owned probe
-}): TimeZoneSupport;
-
-resolveTimeZone(input: {
-  instant: string; // ISO 8601 instant
-  timeZoneId: string;
-  locale?: Intl.LocalesArgument;
-}): ResolvedTimeZone;
-
-resolveLocalDateTime(input: {
-  localDateTime: string; // ISO 8601 wall-clock time; a UTC offset or "Z" is rejected
-  timeZoneId: string;
-  disambiguation: "compatible" | "earlier" | "later" | "reject";
-  locale?: Intl.LocalesArgument;
-}): ResolvedLocalDateTime;
-
-createTimeZoneHotpatch(
-  config?: Partial<Pick<HotpatchConfig, "translations" | "fallbackLocale">>
-): TimeZoneHotpatch;
-
-defaultConfig: HotpatchConfig;
-
-interface ResolvedTimeZone {
-  instant: string; // ISO 8601 UTC
-  timeZoneId: string; // the zone that produced `offset`
-  offset: string; // e.g. "-06:00"
-  label?: string; // approved label; absent for ungoverned zones
-  support: TimeZoneSupport;
-}
-type ResolvedLocalDateTime = ResolvedTimeZone;
-
-interface TimeZoneHotpatch {
-  config: HotpatchConfig; // { rules, translations, fallbackLocale }, frozen
-  inspectTimeZoneSupport, resolveTimeZone, resolveLocalDateTime; // as above
-}
-```
-
-The public types `RuleId`, `TimeZoneRule`, `TimeZoneSupport`, `TimeZoneSupportStatus`,
-`Disambiguation`, `TranslationDictionary`, and each function's input type are exported alongside.
+The signatures and types live in [`src/index.ts`](./src/index.ts) and ship as declarations in
+`dist/`; the notes here cover behaviour the signatures do not say.
 
 `TimeZoneSupport.status` is one of:
 
@@ -117,8 +78,9 @@ Governed results (`current` and `stale`) carry the canonical `timeZoneId`, `rule
 
 Both resolvers return the resolved `instant`, the effective `timeZoneId` — the canonical named
 zone when the host is current or the zone is ungoverned, the rule's fixed `Etc/GMT` zone when the
-host is stale — the `offset` in that zone, the approved `label` (absent for ungoverned zones), and
-the `support` result that chose the zone. For `resolveTimeZone` that is support at the instant.
+host is stale — the `offset` in that zone, the approved `label` with `long` and `short` forms
+(absent for ungoverned zones and locales without one), and the `support` result that chose the
+zone. For `resolveTimeZone` that is support at the instant.
 For `resolveLocalDateTime` it is the rule-owned probe from the divergence day on, because a stale
 host repeats that day's skipped hour and mis-offsets every wall time after it, so the whole day
 must resolve in the fixed zone; before that day, seasonal host data is correct and the host's own
@@ -178,21 +140,26 @@ release and then removed in the next major release, at which point the zone repo
 `defaultConfig.translations` ships approved `en-CA` labels keyed by locale and `ruleId`.
 `createTimeZoneHotpatch({ translations, fallbackLocale })` merges supplied labels over the defaults
 per locale and rule, and `fallbackLocale` names the locale used when a requested one has no label.
-Requested locales are tried in order and canonicalized; a rule with no label anywhere resolves to
-its `ruleId`. Configuration changes labels only — rules, offsets, and inspection behaviour are
+Requested locales are tried in order and canonicalized; a rule with no label in any of them has
+no `label` in results. Each label carries a `long` and a `short` form. Configuration changes
+labels only — rules, offsets, and inspection behaviour are
 fixed. Instances and `defaultConfig` are frozen.
 
 ```ts
+import { createTimeZoneHotpatch } from "@clhbid/canadian-time-zone-hotpatch";
+
 const hotpatch = createTimeZoneHotpatch({
   translations: {
-    "fr-CA": { "ab-permanent-time-2026": "Heure de l'Alberta (ABT)" }
+    "fr-CA": {
+      "ab-permanent-time-2026": { long: "Heure de l'Alberta", short: "HA" }
+    }
   }
 });
 hotpatch.resolveTimeZone({
   instant: "2026-11-15T12:00:00Z",
   timeZoneId: "America/Edmonton",
   locale: "fr-CA"
-}).label; // => "Heure de l'Alberta (ABT)"
+}).label; // => { long: "Heure de l'Alberta", short: "HA" }
 ```
 
 ## Telemetry-safe fields

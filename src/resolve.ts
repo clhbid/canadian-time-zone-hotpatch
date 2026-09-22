@@ -143,18 +143,20 @@ function toResolvedTimeZone(
   if (offset === undefined) {
     throw new UnknownTimeZoneError(timeZoneId);
   }
+  const label =
+    "ruleId" in support
+      ? resolveLabel(
+          config.translations,
+          config.fallbackLocale,
+          support.ruleId,
+          locale
+        )
+      : undefined;
   return Object.freeze({
     instant: instant.toString(),
     timeZoneId,
     offset,
-    ...("ruleId" in support && {
-      label: resolveLabel(
-        config.translations,
-        config.fallbackLocale,
-        support.ruleId,
-        locale
-      )
-    }),
+    ...(label && { label }),
     support
   });
 }

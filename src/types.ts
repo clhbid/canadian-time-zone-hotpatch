@@ -27,9 +27,15 @@ export interface TimeZoneRule {
   readonly firstDivergenceInstant: string;
 }
 
+/** Approved display names for a governed zone, e.g. `"Alberta Time"` and `"ABT"`. */
+export interface TimeZoneLabel {
+  readonly long: string;
+  readonly short: string;
+}
+
 /** A locale-keyed dictionary of rule-id-keyed labels. */
 export type TranslationDictionary = Readonly<
-  Record<string, Readonly<Partial<Record<RuleId, string>>>>
+  Record<string, Readonly<Partial<Record<RuleId, TimeZoneLabel>>>>
 >;
 
 /**
@@ -134,8 +140,8 @@ export interface ResolvedTimeZone {
   readonly timeZoneId: string;
   /** UTC offset at `instant` in the effective zone, e.g. `"-06:00"`. */
   readonly offset: string;
-  /** Approved label for the governing rule; absent for ungoverned zones. */
-  readonly label?: string;
+  /** Approved label for the governing rule; absent for ungoverned zones and unlabelled locales. */
+  readonly label?: TimeZoneLabel;
   /**
    * The inspection that chose `timeZoneId`: `stale` exactly when the fixed
    * zone was used. For an instant this is support at that instant; for a

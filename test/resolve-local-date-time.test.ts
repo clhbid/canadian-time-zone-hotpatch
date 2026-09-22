@@ -40,7 +40,7 @@ describe("resolveLocalDateTime", () => {
         expect(result.instant).toBe("2026-11-01T07:30:00Z");
         expect(result.offset).toBe("-06:00");
         expect(result.timeZoneId).toBe("Etc/GMT+6");
-        expect(result.label).toBe("Alberta Time (ABT)");
+        expect(result.label).toEqual({ long: "Alberta Time", short: "ABT" });
         expect(result.support.status).toBe("stale");
       }
     );

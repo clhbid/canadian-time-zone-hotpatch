@@ -29,15 +29,30 @@ describe("resolveTimeZone", () => {
       instant: "2026-06-01T12:00:00Z",
       timeZoneId: "America/Edmonton",
       offset: "-06:00",
-      label: "Alberta Time (ABT)",
+      label: { long: "Alberta Time", short: "ABT" },
       support: expect.objectContaining({ status: "current" })
     });
   });
 
   it.each([
-    ["America/Edmonton", "Etc/GMT+6", "-06:00", "Alberta Time (ABT)"],
-    ["America/Vancouver", "Etc/GMT+7", "-07:00", "Pacific Time (PCT)"],
-    ["America/Winnipeg", "Etc/GMT+5", "-05:00", "Manitoba Time (MBT)"]
+    [
+      "America/Edmonton",
+      "Etc/GMT+6",
+      "-06:00",
+      { long: "Alberta Time", short: "ABT" }
+    ],
+    [
+      "America/Vancouver",
+      "Etc/GMT+7",
+      "-07:00",
+      { long: "Pacific Time", short: "PCT" }
+    ],
+    [
+      "America/Winnipeg",
+      "Etc/GMT+5",
+      "-05:00",
+      { long: "Manitoba Time", short: "MBT" }
+    ]
   ])("corrects %s to %s once stale", (timeZoneId, fixed, offset, label) => {
     const result = resolveTimeZone({
       instant: "2026-12-25T12:00:00Z",
@@ -45,7 +60,7 @@ describe("resolveTimeZone", () => {
     });
     expect(result.timeZoneId).toBe(fixed);
     expect(result.offset).toBe(offset);
-    expect(result.label).toBe(label);
+    expect(result.label).toEqual(label);
   });
 
   it("normalizes aliases before resolving", () => {
@@ -76,7 +91,7 @@ describe("resolveTimeZone", () => {
       timeZoneId: "America/Edmonton",
       locale: "de-DE"
     });
-    expect(result.label).toBe("Alberta Time (ABT)");
+    expect(result.label).toEqual({ long: "Alberta Time", short: "ABT" });
   });
 
   it("returns a frozen result", () => {
