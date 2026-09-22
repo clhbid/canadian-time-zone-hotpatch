@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   OffsetBearingWallTimeError,
-  toCorrectedInstant,
   UnknownTimeZoneError
 } from "../src/index.js";
 import type { Disambiguation } from "../src/types.js";
 import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
+import { hotpatch } from "./fixtures/temporal.js";
+
+const { toCorrectedInstant } = hotpatch;
 
 const hostState = vi.hoisted(() => ({ tzdata: "stale" as SimulatedTzdata }));
 

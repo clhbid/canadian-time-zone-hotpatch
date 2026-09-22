@@ -18,9 +18,17 @@ implementations, or tzdata versions.
 npm install @clhbid/canadian-time-zone-hotpatch
 ```
 
-Requires Node.js 22.13 or newer, or a browser. `temporal-polyfill` is a dependency and is used
-whenever the host does not expose a `Temporal` global; the package never assigns to
-`globalThis.Temporal` itself.
+Requires Node.js 22.13 or newer, or a browser, **and a compatible `Temporal` implementation**.
+This package ships none: it reads `globalThis.Temporal` when the host has one, and otherwise the
+one you pass to `createHotpatch`. Whether to polyfill `Temporal` is your application's decision —
+it depends on the runtimes you support — so nothing is installed or bundled on your behalf, and
+the package never assigns to `globalThis.Temporal` itself.
+
+On a host with native `Temporal`, install nothing else and use the top-level functions. Without
+one, install a polyfill — [`temporal-polyfill`](https://www.npmjs.com/package/temporal-polyfill),
+for instance — and either install it globally with its `/global` entry point or hand it to
+`createHotpatch`, as [Supplying a Temporal implementation](#supplying-a-temporal-implementation)
+shows.
 
 ## Usage
 
@@ -65,6 +73,31 @@ const entry = toCorrectedInstant({
 const stored = entry.instant;
 // "2026-12-15T16:00:00Z" — an uncorrected host produces 17:00:00Z.
 ```
+
+### Supplying a Temporal implementation
+
+```ts
+import { createHotpatch } from "@clhbid/canadian-time-zone-hotpatch";
+import { Temporal } from "temporal-polyfill";
+
+// Once, where the application wires up its dependencies. The returned
+// functions behave exactly like the top-level ones, on the implementation
+// given here rather than on a global. Nothing is assigned to globalThis.
+const { inspectHostSupport, toCorrectedInstant, toCorrectedZonedTime } =
+  createHotpatch({ temporal: Temporal });
+
+const display = toCorrectedZonedTime({
+  instant: "2026-11-15T19:00:00Z",
+  timeZoneId: "America/Edmonton"
+});
+// display.offset — "-06:00"
+```
+
+`createHotpatch()` with no implementation — which is what the top-level exports use — reads
+`globalThis.Temporal` on every call, so a global polyfill installed during application bootstrap
+is picked up even though the package was imported before it. When no compatible implementation can
+be found, the call throws `MissingTemporalError`, naming both remedies; importing the package
+never throws and never reads a global.
 
 ### Reporting host support to analytics
 
@@ -124,7 +157,13 @@ is `stale` when any governed rule is stale, and `staleRuleIds` lists the stale r
 analytics dimension yields a stable string. A host that cannot observe a governed zone at all
 counts as stale for that rule, having demonstrably not got the rule.
 
-Correction fails explicitly rather than guessing: `UnknownTimeZoneError` for an unrecognized zone,
+`createHotpatch(options?)` binds the three functions above to one `Temporal` implementation:
+`options.temporal` when you supply one, validated on the spot so a wrong value fails where the
+mistake was made, or `globalThis.Temporal` read per call when you do not. The error classes are
+not per instance — they are top-level exports, matched with `instanceof`.
+
+Correction fails explicitly rather than guessing: `MissingTemporalError` when no compatible
+`Temporal` is available, `UnknownTimeZoneError` for an unrecognized zone,
 `OffsetBearingWallTimeError` for a wall-clock time carrying a UTC offset or `Z`, and Temporal's
 `RangeError` for malformed instants or wall times and for `disambiguation: "reject"` at a repeated
 or skipped time.
@@ -177,8 +216,11 @@ release and then removed in the next major release, at which point the zone repo
 
 ## Compatibility
 
-The package reads a native `Temporal` global when the host provides one and otherwise uses the
-bundled `temporal-polyfill`; it never assigns to `globalThis`. Every host read goes through
+The package requires a compatible `Temporal` and treats native and polyfilled implementations
+alike: it reads `globalThis.Temporal`, or uses the implementation given to `createHotpatch`, and
+never assigns to `globalThis`. It depends only on `temporal-spec`, which is types-only and emits
+no runtime code, so nothing beyond this package's own modules reaches your bundle. Every host read
+goes through
 [`src/host.ts`](./src/host.ts), so the tests simulate a legacy or updated host instead of depending
 on the runner's own tzdata.
 

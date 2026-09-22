@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { toCorrectedZonedTime, UnknownTimeZoneError } from "../src/index.js";
+import { UnknownTimeZoneError } from "../src/index.js";
 import { inspectTimeZoneSupport } from "../src/inspect.js";
 import { rules } from "../src/rules.js";
 import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
+import { hotpatch, temporal } from "./fixtures/temporal.js";
+
+const { toCorrectedZonedTime } = hotpatch;
 
 const hostState = vi.hoisted(() => ({ tzdata: "stale" as SimulatedTzdata }));
 
@@ -123,7 +126,11 @@ describe("toCorrectedZonedTime", () => {
           for (const delta of [-1000, 0, 1000]) {
             const instant = new Date(divergence + delta).toISOString();
             const result = toCorrectedZonedTime({ instant, timeZoneId });
-            const support = inspectTimeZoneSupport(timeZoneId, instant);
+            const support = inspectTimeZoneSupport(
+              temporal,
+              timeZoneId,
+              instant
+            );
             expect(result.support).toEqual(support);
             expect(result.timeZoneId).toBe(
               support.status === "stale" ? rule.fixedTimeZoneId : timeZoneId
