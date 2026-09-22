@@ -39,8 +39,16 @@ export class OffsetBearingWallTimeError extends RangeError {
   }
 }
 
-/** A UTC offset or `Z` closing the time part, ahead of any bracketed annotation. */
-const offsetDesignator = /[Tt ].*(?:[Zz]|[+-]\d{2}(?::?\d{2})?)$/;
+/** A UTC offset or `Z` at the end of a string. */
+const offsetSuffix = /(?:[Zz]|[+-]\d{2}(?::?\d{2})?)$/;
+
+/** Whether `wallTime` closes its time part with a UTC offset or `Z`, ahead of any bracketed annotation. */
+function carriesOffsetDesignator(wallTime: string): boolean {
+  const annotation = wallTime.indexOf("[");
+  const timePart = annotation === -1 ? wallTime : wallTime.slice(0, annotation);
+  const separator = timePart.search(/[Tt ]/);
+  return separator !== -1 && offsetSuffix.test(timePart.slice(separator + 1));
+}
 
 /**
  * Corrects an instant for display; the instant itself never changes. Throws
@@ -75,7 +83,7 @@ export function toCorrectedInstant(
   // `Temporal.PlainDateTime.from` discards a numeric offset silently, even an
   // invalid one, which would quietly reinterpret a supplied instant as wall
   // time.
-  if (offsetDesignator.test(input.wallTime.replace(/\[.*$/, ""))) {
+  if (carriesOffsetDesignator(input.wallTime)) {
     throw new OffsetBearingWallTimeError(input.wallTime);
   }
   const local = Temporal.PlainDateTime.from(input.wallTime);
