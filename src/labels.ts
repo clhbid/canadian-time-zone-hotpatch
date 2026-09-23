@@ -5,9 +5,9 @@
  * Labels cannot alter offset rules, which are owned exclusively
  * by `src/rules.ts`.
  */
+import { isKnownTimeZoneId } from "./host.js";
 import { findRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
-import { isKnownTimeZoneId } from "./host.js";
 import type { RuleId, TimeZoneLabel, ToTimeZoneLabelInput } from "./types.js";
 
 export const labels: Readonly<Record<RuleId, TimeZoneLabel>> = Object.freeze({
