@@ -5,7 +5,6 @@
  * Labels cannot alter offset rules, which are owned exclusively
  * by `src/rules.ts`.
  */
-import { isKnownTimeZoneId } from "./host.js";
 import { findRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
 import type { RuleId, TimeZoneLabel, ToTimeZoneLabelInput } from "./types.js";
@@ -27,12 +26,18 @@ export const labels: Readonly<Record<RuleId, TimeZoneLabel>> = Object.freeze({
 
 /**
  * The approved label for a governed zone at an instant, or `undefined` when
- * there is none: before that rule's first divergence, for a zone no rule
- * governs — including the rules' own fixed `Etc/GMT` correction zones, which
- * are ordinary zones and name no jurisdiction — and for an identifier neither
- * the package nor the host recognizes.
+ * there is none: before that rule's first divergence, and for any identifier
+ * no rule governs — an ordinary zone, a malformed string, and the rules' own
+ * fixed `Etc/GMT` correction zones, which are legitimate zones in their own
+ * right and name no jurisdiction.
  *
- * Unlike the correction functions, this never throws, so it can be called
+ * The rule table is the sole authority here, and the host is not consulted at
+ * all. An approved label is a fact about a jurisdiction's statute, true on a
+ * host that has never heard of the zone — indeed most true there, since such
+ * a host is the reason this package exists. Whether the host can *format* the
+ * zone is the correction functions' question, and they throw when it cannot.
+ *
+ * Unlike those functions, this never throws, so it can be called
  * unconditionally from a formatting path. A caller with no label falls back
  * to the host's own name for the zone; the package derives none from `Intl`.
  *
@@ -46,7 +51,7 @@ export function toTimeZoneLabel(
   input: ToTimeZoneLabelInput
 ): TimeZoneLabel | undefined {
   const rule = findRule(input.timeZoneId);
-  if (!rule || !isKnownTimeZoneId(temporal, rule.canonicalTimeZoneId)) {
+  if (!rule) {
     return undefined;
   }
   try {

@@ -1,14 +1,28 @@
 /*
  * The boundary matrix for approved labels lives here alone: the correction
- * specs assert offsets and zones, not names. The lookup reads no host time
- * zone data — only the rule table and the supplied Temporal — so it needs no
- * simulated host and its answers do not depend on the runner's tzdata.
+ * specs assert offsets and zones, not names.
+ *
+ * The whole suite runs against a host that recognizes no time zone at all,
+ * because an approved label is a fact about a jurisdiction's statute and not
+ * about the running host — and a host this blind is the very reason the
+ * package exists. Every assertion below therefore also pins that the lookup
+ * consults nothing but the rule table and the supplied Temporal, so no
+ * answer here depends on the runner's installed tzdata. A host-recognition
+ * gate was proposed in review and rejected on those grounds; if one is ever
+ * reintroduced, this file fails wholesale.
  */
-import { afterEach, describe, expect, it, vi } from "vitest";
-import * as host from "../src/host.js";
+import { describe, expect, it, vi } from "vitest";
 import { labels } from "../src/labels.js";
 import { rules } from "../src/rules.js";
 import { hotpatch } from "./fixtures/temporal.js";
+
+vi.mock("../src/host.js", () => ({
+  isKnownTimeZoneId: () => false,
+  observeOffset: () => undefined,
+  observeInstant: () => {
+    throw new RangeError("This host recognizes no time zone identifiers.");
+  }
+}));
 
 const { toTimeZoneLabel } = hotpatch;
 
@@ -22,10 +36,6 @@ function around(divergenceInstant: string, deltaMilliseconds: number): string {
 const cases = rules.map((rule) => [rule.canonicalTimeZoneId, rule] as const);
 
 describe("toTimeZoneLabel", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it.each(cases)("labels %s from its first divergence onwards", (_, rule) => {
     const label = labels[rule.ruleId];
     expect(
@@ -95,17 +105,6 @@ describe("toTimeZoneLabel", () => {
       ).toBeUndefined();
     }
   );
-
-  it("returns no label for a governed zone the host does not recognize", () => {
-    vi.spyOn(host, "isKnownTimeZoneId").mockReturnValue(false);
-
-    expect(
-      toTimeZoneLabel({
-        instant: "2026-12-25T12:00:00Z",
-        timeZoneId: "America/Edmonton"
-      })
-    ).toBeUndefined();
-  });
 
   it.each(["not-an-instant", "2026-12-25T12:00:00", ""])(
     "returns no label for the malformed instant %s rather than throwing",
