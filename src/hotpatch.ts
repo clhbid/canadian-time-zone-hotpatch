@@ -10,13 +10,16 @@
  */
 import * as correct from "./correct.js";
 import { inspectHostSupport } from "./inspect.js";
+import { toTimeZoneLabel } from "./labels.js";
 import type { TemporalNamespace } from "./temporal.js";
 import { requireGlobalTemporal, requireTemporal } from "./temporal.js";
 import type {
   CorrectedZonedTime,
   HostSupport,
+  TimeZoneLabel,
   ToCorrectedInstantInput,
-  ToCorrectedZonedTimeInput
+  ToCorrectedZonedTimeInput,
+  ToTimeZoneLabelInput
 } from "./types.js";
 
 /** Options for `createHotpatch`. */
@@ -37,6 +40,7 @@ export interface Hotpatch {
   inspectHostSupport(): HostSupport;
   toCorrectedInstant(input: ToCorrectedInstantInput): CorrectedZonedTime;
   toCorrectedZonedTime(input: ToCorrectedZonedTimeInput): CorrectedZonedTime;
+  toTimeZoneLabel(input: ToTimeZoneLabelInput): TimeZoneLabel | undefined;
 }
 
 /**
@@ -59,6 +63,8 @@ export function createHotpatch(options: HotpatchOptions = {}): Hotpatch {
     toCorrectedInstant: (input: ToCorrectedInstantInput) =>
       correct.toCorrectedInstant(temporal(), input),
     toCorrectedZonedTime: (input: ToCorrectedZonedTimeInput) =>
-      correct.toCorrectedZonedTime(temporal(), input)
+      correct.toCorrectedZonedTime(temporal(), input),
+    toTimeZoneLabel: (input: ToTimeZoneLabelInput) =>
+      toTimeZoneLabel(temporal(), input)
   });
 }

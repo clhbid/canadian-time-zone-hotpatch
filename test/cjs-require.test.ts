@@ -35,7 +35,8 @@ describe("require() from CommonJS", () => {
       "createHotpatch",
       "inspectHostSupport",
       "toCorrectedInstant",
-      "toCorrectedZonedTime"
+      "toCorrectedZonedTime",
+      "toTimeZoneLabel"
     ]);
   });
 

@@ -29,38 +29,21 @@ describe("toCorrectedZonedTime", () => {
       instant: "2026-06-01T12:00:00Z",
       timeZoneId: "America/Edmonton",
       offset: "-06:00",
-      label: { long: "Alberta Time", short: "ABT" },
       support: expect.objectContaining({ status: "current" })
     });
   });
 
   it.each([
-    [
-      "America/Edmonton",
-      "Etc/GMT+6",
-      "-06:00",
-      { long: "Alberta Time", short: "ABT" }
-    ],
-    [
-      "America/Vancouver",
-      "Etc/GMT+7",
-      "-07:00",
-      { long: "Pacific Time", short: "PCT" }
-    ],
-    [
-      "America/Winnipeg",
-      "Etc/GMT+5",
-      "-05:00",
-      { long: "Manitoba Time", short: "MBT" }
-    ]
-  ])("corrects %s to %s once stale", (timeZoneId, fixed, offset, label) => {
+    ["America/Edmonton", "Etc/GMT+6", "-06:00"],
+    ["America/Vancouver", "Etc/GMT+7", "-07:00"],
+    ["America/Winnipeg", "Etc/GMT+5", "-05:00"]
+  ])("corrects %s to %s once stale", (timeZoneId, fixed, offset) => {
     const result = toCorrectedZonedTime({
       instant: "2026-12-25T12:00:00Z",
       timeZoneId
     });
     expect(result.timeZoneId).toBe(fixed);
     expect(result.offset).toBe(offset);
-    expect(result.label).toEqual(label);
   });
 
   it("normalizes aliases before correcting", () => {
@@ -72,7 +55,7 @@ describe("toCorrectedZonedTime", () => {
     expect(result.timeZoneId).toBe("Etc/GMT+6");
   });
 
-  it("passes an ungoverned zone through to the host without a label", () => {
+  it("passes an ungoverned zone through to the host", () => {
     const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "America/Dawson_Creek"

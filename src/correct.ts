@@ -1,15 +1,16 @@
 /**
- * Corrected calculations in both directions: an instant to the offset and
- * label it should display with, and a wall-clock time to the instant it
- * denotes. Both directions decide on the same inspection logic: a current
- * host keeps the canonical named zone, a stale host uses the rule's fixed
- * `Etc/GMT` zone, an ungoverned zone passes through to host Temporal, and an
- * unknown zone fails rather than guessing a jurisdiction.
+ * Corrected calculations in both directions: an instant to the offset it
+ * should display with, and a wall-clock time to the instant it denotes.
+ * Correcting settles the offset and the zone only; the approved name of a
+ * zone is a separate question, answered by `toTimeZoneLabel`. Both directions
+ * decide on the same inspection logic: a current host keeps the canonical
+ * named zone, a stale host uses the rule's fixed `Etc/GMT` zone, an ungoverned
+ * zone passes through to host Temporal, and an unknown zone fails rather than
+ * guessing a jurisdiction.
  */
 import type { HostInstant, HostPlainDateTime } from "./host.js";
 import { observeInstant, observeOffset } from "./host.js";
 import { inspectTimeZoneSupport } from "./inspect.js";
-import { labels } from "./labels.js";
 import type { TimeZoneRule } from "./rules.js";
 import { findRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
@@ -147,12 +148,10 @@ function toCorrected(
   if (offset === undefined) {
     throw new UnknownTimeZoneError(timeZoneId);
   }
-  const label = "ruleId" in support ? labels[support.ruleId] : undefined;
   return Object.freeze({
     instant: instant.toString(),
     timeZoneId,
     offset,
-    ...(label && { label }),
     support
   });
 }

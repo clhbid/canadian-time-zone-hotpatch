@@ -87,6 +87,14 @@ export interface ToCorrectedInstantInput {
   readonly disambiguation: Disambiguation;
 }
 
+/** Input to `toTimeZoneLabel`. */
+export interface ToTimeZoneLabelInput {
+  /** ISO 8601 instant to label, e.g. `"2026-11-15T12:00:00Z"`. */
+  readonly instant: string;
+  /** IANA time zone identifier, matched case-insensitively; aliases are accepted. */
+  readonly timeZoneId: string;
+}
+
 /** A corrected instant together with the zone that produced it. */
 export interface CorrectedZonedTime {
   /** The corrected instant in ISO 8601 UTC form. */
@@ -99,8 +107,6 @@ export interface CorrectedZonedTime {
   readonly timeZoneId: string;
   /** UTC offset at `instant` in the effective zone, e.g. `"-06:00"`. */
   readonly offset: string;
-  /** Approved label for the governing rule; absent for ungoverned zones. */
-  readonly label?: TimeZoneLabel;
   /**
    * The inspection that chose `timeZoneId`: `stale` exactly when the fixed
    * zone was used. For an instant this is support at that instant; for a

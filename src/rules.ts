@@ -48,6 +48,9 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     // - https://kings-printer.alberta.ca/Documents/Orders/Orders_in_Council/2026/2026_204.html
     // - https://www.canlii.org/en/ab/laws/stat/rsa-2000-c-o-5.7/latest/rsa-2000-c-o-5.7.html
     legalEffectiveInstant: "2026-06-18T00:00:00-06:00",
+    // Label "Alberta Time" / "ABT": the province states ABT is the official
+    // abbreviation.
+    // Source: https://www.alberta.ca/albertas-new-time-system-abt
     // The next scheduled "fall back" is skipped; clocks stay at -06:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
   }),
@@ -62,6 +65,9 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     // at the start of March 9, 2026 in B.C.'s new UTC-7 Pacific time.
     // Source: https://www.bclaws.gov.bc.ca/civix/document/id/oic/oic_cur/0063_2026
     legalEffectiveInstant: "2026-03-09T00:00:00-07:00",
+    // Label "Pacific Time" / "PCT": the province names the code PCT, replacing
+    // PST and PDT. The Order in Council above establishes the offset, not the name.
+    // Source: https://news.gov.bc.ca/releases/2026CITZ0009-001073
     // The next scheduled "fall back" is skipped; clocks stay at -07:00.
     firstDivergenceInstant: "2026-11-01T02:00:00-07:00"
   }),
@@ -73,7 +79,16 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     offset: "-05:00",
     fixedTimeZoneId: "Etc/GMT+5",
     // Manitoba announced that the next scheduled "fall back" will be skipped,
-    // but has not yet proclaimed a legal commencement.
+    // but has not yet proclaimed a legal commencement, so `legalEffectiveInstant`
+    // is deliberately left unset: The Official Time Amendment Act, S.M. 2023, c. 4
+    // is not in force. Its s. 4 commences it on a day fixed by proclamation and no
+    // proclamation has been made; two private members' bills would fix a date —
+    // Bill 223 (43-2) at March 8, 2026 and Bill 214 (43-3) at March 14, 2027 —
+    // and neither has royal assent. The change proceeds by the government
+    // announcement of 2026-09-17 instead.
+    // Label "Manitoba Standard Time" / "MBT": s. 1 of that Act defines Manitoba
+    // Standard Time as five hours behind UTC and s. 2(1.1) states the official
+    // time may be referred to as MBT.
     // Sources:
     // - https://web2.gov.mb.ca/laws/statutes/2023/c00423.php?lang=en
     // - https://news.gov.mb.ca/news/?item=75397

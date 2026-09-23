@@ -10,7 +10,8 @@ describe("package root", () => {
       "createHotpatch",
       "inspectHostSupport",
       "toCorrectedInstant",
-      "toCorrectedZonedTime"
+      "toCorrectedZonedTime",
+      "toTimeZoneLabel"
     ]);
   });
 });

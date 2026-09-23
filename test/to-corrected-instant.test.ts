@@ -7,7 +7,7 @@ import type { Disambiguation } from "../src/types.js";
 import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
 import { hotpatch } from "./fixtures/temporal.js";
 
-const { toCorrectedInstant } = hotpatch;
+const { toCorrectedInstant, toTimeZoneLabel } = hotpatch;
 
 const hostState = vi.hoisted(() => ({ tzdata: "stale" as SimulatedTzdata }));
 
@@ -42,8 +42,15 @@ describe("toCorrectedInstant", () => {
         expect(result.instant).toBe("2026-11-01T07:30:00Z");
         expect(result.offset).toBe("-06:00");
         expect(result.timeZoneId).toBe("Etc/GMT+6");
-        expect(result.label).toEqual({ long: "Alberta Time", short: "ABT" });
         expect(result.support.status).toBe("stale");
+        // 01:30 that morning is still before the rule's first divergence, so
+        // the offset is corrected but the approved label does not apply yet.
+        expect(
+          toTimeZoneLabel({
+            instant: result.instant,
+            timeZoneId: "America/Edmonton"
+          })
+        ).toBeUndefined();
       }
     );
 
@@ -155,7 +162,7 @@ describe("toCorrectedInstant", () => {
     expect(() => correct("reject")).not.toThrow(UnknownTimeZoneError);
   });
 
-  it("passes an ungoverned zone through to the host without a label", () => {
+  it("passes an ungoverned zone through to the host", () => {
     const result = toCorrectedInstant({
       wallTime: "2026-12-25T10:00:00",
       timeZoneId: "America/Dawson_Creek",
