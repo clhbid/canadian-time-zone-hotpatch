@@ -4,7 +4,8 @@
  * zone data — only the rule table and the supplied Temporal — so it needs no
  * simulated host and its answers do not depend on the runner's tzdata.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import * as host from "../src/host.js";
 import { labels } from "../src/labels.js";
 import { rules } from "../src/rules.js";
 import { hotpatch } from "./fixtures/temporal.js";
@@ -21,6 +22,10 @@ function around(divergenceInstant: string, deltaMilliseconds: number): string {
 const cases = rules.map((rule) => [rule.canonicalTimeZoneId, rule] as const);
 
 describe("toTimeZoneLabel", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it.each(cases)("labels %s from its first divergence onwards", (_, rule) => {
     const label = labels[rule.ruleId];
     expect(
@@ -90,6 +95,17 @@ describe("toTimeZoneLabel", () => {
       ).toBeUndefined();
     }
   );
+
+  it("returns no label for a governed zone the host does not recognize", () => {
+    vi.spyOn(host, "isKnownTimeZoneId").mockReturnValue(false);
+
+    expect(
+      toTimeZoneLabel({
+        instant: "2026-12-25T12:00:00Z",
+        timeZoneId: "America/Edmonton"
+      })
+    ).toBeUndefined();
+  });
 
   it.each(["not-an-instant", "2026-12-25T12:00:00", ""])(
     "returns no label for the malformed instant %s rather than throwing",

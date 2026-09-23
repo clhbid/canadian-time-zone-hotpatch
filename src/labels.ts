@@ -7,6 +7,7 @@
  */
 import { findRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
+import { isKnownTimeZoneId } from "./host.js";
 import type { RuleId, TimeZoneLabel, ToTimeZoneLabelInput } from "./types.js";
 
 export const labels: Readonly<Record<RuleId, TimeZoneLabel>> = Object.freeze({
@@ -45,7 +46,7 @@ export function toTimeZoneLabel(
   input: ToTimeZoneLabelInput
 ): TimeZoneLabel | undefined {
   const rule = findRule(input.timeZoneId);
-  if (!rule) {
+  if (!rule || !isKnownTimeZoneId(temporal, rule.canonicalTimeZoneId)) {
     return undefined;
   }
   try {
