@@ -129,6 +129,32 @@ const event = {
 // agent, and never reads the visitor's own timezone.
 ```
 
+### Using with Node.js
+
+In an ES module:
+
+```ts
+import { createHotpatch } from "@clhbid/canadian-time-zone-hotpatch";
+import { Temporal } from "temporal-polyfill";
+
+const { toCorrectedZonedTime } = createHotpatch({ temporal: Temporal });
+
+const display = toCorrectedZonedTime({
+  instant: "2026-11-15T19:00:00Z",
+  timeZoneId: "America/Edmonton"
+});
+// display.offset — "-06:00"
+```
+
+In CommonJS, on Node.js 22.13 or newer, `require()` loads the same entry point:
+
+```js
+const { createHotpatch } = require("@clhbid/canadian-time-zone-hotpatch");
+const { Temporal } = require("temporal-polyfill");
+
+const { toCorrectedZonedTime } = createHotpatch({ temporal: Temporal });
+```
+
 ## Interface
 
 Read [`src/index.ts`](./src/index.ts), [`src/`](./src/), and the specs in [`test/`](./test/) for
