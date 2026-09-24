@@ -231,9 +231,12 @@ best adds a long name years later with no usable short form, as `America/Whiteho
 correcting an instant deliberately says nothing about what the zone is called.
 
 Each rule's correction is temporary. Once host timezone data for a jurisdiction is current across
-the user populations that telemetry reports on, its rule is deprecated in this README for one minor
-release and then removed in the next major release, at which point the zone reports
-`not_applicable`. Consumers should not rely on a rule outliving the stale hosts it exists for.
+the user populations that telemetry reports on, its correction is deprecated in this README for one
+minor release and then retired in the next major release, at which point the zone reports
+`not_applicable` and correcting it passes through to the host. Retiring a correction does not retire
+the rule's label: `toTimeZoneLabel` goes on answering for that zone, because host data still will
+not carry the approved name. Consumers should not rely on a correction outliving the stale hosts it
+exists for.
 
 ## Development
 
