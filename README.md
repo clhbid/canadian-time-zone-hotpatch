@@ -184,13 +184,6 @@ shipped signatures and behavioural detail.
 | Northwest Territories | `America/Yellowknife` | —                 | `-06:00`         | `Etc/GMT+6` | —                            |
 | Northwest Territories | `America/Inuvik`      | —                 | `-06:00`         | `Etc/GMT+6` | —                            |
 
-The two Northwest Territories zones are governed by a rule each rather than one rule for the
-territory: `America/Yellowknife` is a backward-compatibility link that rides on Edmonton's host
-data while `America/Inuvik` needs its own upstream fix, so the two go current at different times
-and a rule each lets `inspectHostSupport` say which is which. Neither carries an alias —
-`Canada/Mountain` belongs to Alberta — and neither carries a label, because the territory has
-published no approved short code.
-
 Each rule keeps the instant its offset legally commences separate from its `firstDivergenceInstant`,
 the skipped "fall back" on 2026-11-01 when a legacy host first disagrees with it; see
 [`src/rules.ts`](./src/rules.ts). Fixed correction zones use IANA's inverted `Etc/GMT` signs: UTC-6
@@ -232,11 +225,12 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   [permanent-time announcement](https://news.gov.mb.ca/news/?item=75397); that Act is not in force —
   s. 4 commences it on a day fixed by proclamation and none has been made — so its legal
   commencement remains unset
-- Northwest Territories —
-  [the GNWT announcement](https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change)
-  that the regulations establishing Northwest Territories Time came into force on 2026-08-21,
-  ending seasonal clock changes for both `America/Yellowknife` and `America/Inuvik`; the territory
-  has published a long name but no short code, so neither rule bundles a label
+- Northwest Territories — the
+  [announcement](https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change)
+  that the regulations establishing Northwest Territories Time came into force on 2026-08-21; those
+  regulations carry no registration number, and give no short code, so neither zone is labelled.
+  The two zones take a rule each because `America/Inuvik` needs its own upstream fix and so goes
+  current later than `America/Yellowknife`
 
 ## Limitations
 
@@ -244,10 +238,9 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   passes through to the host.
 - Only the approved English labels are bundled, and only from a rule's first divergence onwards.
   Before it, `toTimeZoneLabel` returns nothing and a caller falls back to the host's own name for
-  the zone (MST/MDT, PST/PDT, CST/CDT). It returns nothing for an ungoverned zone, and nothing for
-  a governed zone whose jurisdiction has published no approved label — the Northwest Territories
-  zones today — so a caller falls back to the host's own name there too. The package derives no
-  label from `Intl` itself.
+  the zone (MST/MDT, PST/PDT, CST/CDT), as it does for a governed zone whose jurisdiction has
+  published no approved label — the Northwest Territories zones today. The package derives no label
+  from `Intl` itself.
 - It formats nothing. Applications format the corrected `instant` in the effective `timeZoneId`.
 - `toCorrectedInstant` trusts the host's own disambiguation before the divergence day, so a host
   whose seasonal data is wrong for earlier years is not corrected.

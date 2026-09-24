@@ -1,7 +1,7 @@
 /**
- * Approved English labels for each rule that has one, and the lookup that
- * decides when one applies. A governed rule whose jurisdiction has published
- * no approved short code has no entry here, and is unlabelled until one is.
+ * Approved English labels for the rules that have one, and the lookup that
+ * decides when one applies. A rule whose jurisdiction has published no
+ * approved label has no entry here.
  *
  * Labels cannot alter offset rules, which are owned exclusively
  * by `src/rules.ts`.
@@ -28,8 +28,8 @@ export const labels: Readonly<Partial<Record<RuleId, TimeZoneLabel>>> =
 
 /**
  * The approved label for a governed zone at an instant, or `undefined` before
- * that rule's first divergence, for a governed zone whose jurisdiction has
- * published no approved label, and for any identifier no rule governs.
+ * that rule's first divergence, for a governed zone with no bundled label,
+ * and for any identifier no rule governs.
  *
  * No input makes it throw, unlike the correction functions, so it can be
  * called unconditionally while formatting. A caller with no label falls back

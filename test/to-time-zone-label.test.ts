@@ -30,10 +30,9 @@ function around(divergenceInstant: string, deltaMilliseconds: number): string {
 
 const cases = rules.map((rule) => [rule.canonicalTimeZoneId, rule] as const);
 
-// The boundary matrix reads its expected label from `labels`, so for a rule
-// with no bundled label it would collapse to asserting `undefined` equals
-// `undefined`. Labelled rules go through the matrix; unlabelled ones are
-// pinned explicitly below, so bundling a label later is a deliberate change.
+// The boundary matrix reads its expected label from `labels`, so an
+// unlabelled rule would collapse it to `undefined` equals `undefined`. Those
+// rules are pinned explicitly instead, below.
 const labelledCases = cases.filter(([, rule]) => labels[rule.ruleId]);
 const unlabelledCases = cases.filter(([, rule]) => !labels[rule.ruleId]);
 
@@ -89,9 +88,6 @@ describe("toTimeZoneLabel", () => {
     ).toBeUndefined();
   });
 
-  // The Northwest Territories published the long name but no short code, so
-  // neither NWT rule bundles a label and a caller falls back to the host's
-  // own name for the zone, before and after divergence alike.
   it.each(unlabelledCases)(
     "gives %s no label around its first divergence",
     (_, rule) => {
@@ -106,7 +102,9 @@ describe("toTimeZoneLabel", () => {
     }
   );
 
-  it("bundles no label for the Northwest Territories rules", () => {
+  // Guards the split above: were a label bundled, the matrix would silently
+  // stop covering the boundary it was restricted for.
+  it("leaves exactly the Northwest Territories rules unlabelled", () => {
     expect(unlabelledCases.map(([timeZoneId]) => timeZoneId)).toEqual([
       "America/Yellowknife",
       "America/Inuvik"
@@ -115,9 +113,8 @@ describe("toTimeZoneLabel", () => {
 
   // The boundary matrix above reads its expected label from `labels`, so it
   // pins when a label applies, not what it says. The table itself is pinned
-  // here, against its published sources: the three labelled rules and no
-  // entry for either Northwest Territories rule.
-  it("bundles the approved label for every labelled rule, and none for the rest", () => {
+  // here, against its published sources.
+  it("bundles the approved label for every labelled rule, and none besides", () => {
     expect(labels).toEqual({
       "ab-permanent-time-2026": { long: "Alberta Time", short: "ABT" },
       "bc-permanent-time-2026": { long: "Pacific Time", short: "PCT" },

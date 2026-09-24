@@ -88,8 +88,6 @@ describe("rules", () => {
     }
   );
 
-  // Alberta keeps `Canada/Mountain`, and Nunavut is ungoverned even where it
-  // shares the Northwest Territories' offset.
   it("leaves Canada/Mountain with Alberta", () => {
     expect(findRule("Canada/Mountain")?.ruleId).toBe("ab-permanent-time-2026");
   });

@@ -256,8 +256,6 @@ describe("inspectHostSupport", () => {
     });
   });
 
-  // Yellowknife rides on Edmonton's tzdata while Inuvik needs its own
-  // upstream fix, so a host can be current for one and stale for the other.
   it("names Inuvik's rule alone on a host current for Edmonton but seasonal for Inuvik", () => {
     hostState.tzdata = {
       "America/Edmonton": "current",
