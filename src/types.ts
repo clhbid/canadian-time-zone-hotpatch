@@ -56,16 +56,23 @@ export interface HostSupport {
 }
 
 /**
- * Temporal's disambiguation modes for ambiguous or nonexistent wall-clock
- * times; see
+ * Every value a `disambiguation` takes; see
  * https://tc39.es/proposal-temporal/docs/timezone.html#resolving-time-ambiguity-in-temporal.
- *
- * - `compatible` — later at a skipped time, earlier at a repeated time.
- * - `earlier` — the earlier possible instant.
- * - `later` — the later possible instant.
- * - `reject` — throws the `RangeError` Temporal would throw.
  */
-export type Disambiguation = "compatible" | "earlier" | "later" | "reject";
+export const Disambiguation = Object.freeze({
+  /** Later at a skipped time, earlier at a repeated one. */
+  compatible: "compatible",
+  /** The earlier of the two instants. */
+  earlier: "earlier",
+  /** The later of the two instants. */
+  later: "later",
+  /** Throws the `RangeError` Temporal would throw. */
+  reject: "reject"
+} as const);
+
+/** How a wall-clock time the zone repeats or skips resolves to an instant. */
+export type Disambiguation =
+  (typeof Disambiguation)[keyof typeof Disambiguation];
 
 /** Input to `toCorrectedZonedTime`. */
 export interface ToCorrectedZonedTimeInput {

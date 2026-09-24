@@ -20,10 +20,9 @@ export { createHotpatch } from "./hotpatch.js";
 export type { Hotpatch, HotpatchOptions } from "./hotpatch.js";
 export { MissingTemporalError } from "./temporal.js";
 export type { TemporalNamespace } from "./temporal.js";
-export { TimeZoneSupportStatus } from "./types.js";
+export { Disambiguation, TimeZoneSupportStatus } from "./types.js";
 export type {
   CorrectedZonedTime,
-  Disambiguation,
   HostSupport,
   RuleId,
   TimeZoneLabel,
