@@ -75,15 +75,18 @@ export interface Hotpatch {
   /**
    * The approved label for a governed zone at an instant, or `undefined`. No
    * input makes it throw, so it is safe to call unconditionally in a render.
+   * @throws {MissingTemporalError} When no Temporal implementation is available.
    */
   toTimeZoneLabel(input: ToTimeZoneLabelInput): TimeZoneLabel | undefined;
 }
 
 /**
  * Builds a `Hotpatch` on `options.temporal`, or on `globalThis.Temporal` when
- * it is omitted. Throws `MissingTemporalError` here when a supplied
- * implementation is unusable, so the mistake surfaces where it was made, and
- * from each call when no global one can be found.
+ * it is omitted. A supplied implementation is checked here rather than at
+ * first use, so the mistake surfaces where it was made; a missing global one
+ * surfaces from each call instead.
+ * @throws {MissingTemporalError} When `options.temporal` is not a usable
+ * Temporal implementation.
  */
 export function createHotpatch(options: HotpatchOptions = {}): Hotpatch {
   // Reading the global here would make importing this package inspect the

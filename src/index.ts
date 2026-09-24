@@ -85,6 +85,7 @@ export const toCorrectedZonedTime: Hotpatch["toCorrectedZonedTime"] = (input) =>
 /**
  * The approved label for a governed zone at an instant, or `undefined`. No
  * input makes it throw, so it is safe to call unconditionally in a render.
+ * @throws {MissingTemporalError} When no Temporal implementation is available.
  */
 export const toTimeZoneLabel: Hotpatch["toTimeZoneLabel"] = (input) =>
   label(requireGlobalTemporal(), input);
