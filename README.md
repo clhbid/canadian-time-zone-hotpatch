@@ -186,6 +186,23 @@ the skipped "fall back" on 2026-11-01 when a legacy host first disagrees with it
 [`src/rules.ts`](./src/rules.ts). Fixed correction zones use IANA's inverted `Etc/GMT` signs: UTC-6
 is `Etc/GMT+6`.
 
+The same table is exported as `rules`, frozen, for applications to test against. Deriving cases
+from it keeps an application's tests in step with the package instead of copying its dates:
+
+```ts
+import { rules } from "@clhbid/canadian-time-zone-hotpatch";
+
+// A second before, and at, each rule's first divergence.
+const cases = rules.flatMap((rule) => {
+  const divergence = Date.parse(rule.firstDivergenceInstant);
+  return [divergence - 1000, divergence].map((epochMs) => ({
+    timeZoneId: rule.canonicalTimeZoneId,
+    instant: new Date(epochMs).toISOString()
+  }));
+});
+// cases[0] — { timeZoneId: "America/Edmonton", instant: "2026-11-01T07:59:59.000Z" }
+```
+
 Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 
 - Alberta —

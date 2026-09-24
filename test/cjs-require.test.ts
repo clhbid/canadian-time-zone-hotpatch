@@ -36,6 +36,7 @@ describe("require() from CommonJS", () => {
       "UnknownTimeZoneError",
       "createHotpatch",
       "inspectHostSupport",
+      "rules",
       "toCorrectedInstant",
       "toCorrectedZonedTime",
       "toTimeZoneLabel"
