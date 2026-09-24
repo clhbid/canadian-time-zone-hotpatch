@@ -78,9 +78,10 @@ export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
     return Object.freeze({
       ruleId: rule.ruleId,
       status:
-        support.status === TimeZoneSupportStatus.current
-          ? TimeZoneSupportStatus.current
-          : TimeZoneSupportStatus.stale
+        support.status === TimeZoneSupportStatus.not_applicable ||
+        support.status === TimeZoneSupportStatus.unknown
+          ? TimeZoneSupportStatus.stale
+          : support.status
     } satisfies RuleSupport);
   });
   const staleRuleIds = ruleSupport
