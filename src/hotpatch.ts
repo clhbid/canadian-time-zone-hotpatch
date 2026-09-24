@@ -9,7 +9,7 @@
  * after this module is imported still counts.
  */
 import * as correct from "./correct.js";
-import { inspectHostSupport } from "./inspect.js";
+import { inspectHostSupport, inspectTimeZoneSupport } from "./inspect.js";
 import { toTimeZoneLabel } from "./labels.js";
 import type { TemporalNamespace } from "./temporal.js";
 import { requireGlobalTemporal, requireTemporal } from "./temporal.js";
@@ -17,6 +17,7 @@ import type {
   CorrectedZonedTime,
   HostSupport,
   TimeZoneLabel,
+  TimeZoneSupport,
   ToCorrectedInstantInput,
   ToCorrectedZonedTimeInput,
   ToTimeZoneLabelInput
@@ -38,6 +39,12 @@ export interface HotpatchOptions {
  */
 export interface Hotpatch {
   inspectHostSupport(): HostSupport;
+  /**
+   * Inspects a single zone's support without correcting it. No input makes
+   * it throw, so it is safe to call unconditionally in a render, guarding
+   * before a call to `toCorrectedZonedTime` or `toCorrectedInstant`.
+   */
+  inspectTimeZoneSupport(timeZoneId: string): TimeZoneSupport;
   toCorrectedInstant(input: ToCorrectedInstantInput): CorrectedZonedTime;
   toCorrectedZonedTime(input: ToCorrectedZonedTimeInput): CorrectedZonedTime;
   toTimeZoneLabel(input: ToTimeZoneLabelInput): TimeZoneLabel | undefined;
@@ -60,6 +67,8 @@ export function createHotpatch(options: HotpatchOptions = {}): Hotpatch {
 
   return Object.freeze({
     inspectHostSupport: () => inspectHostSupport(temporal()),
+    inspectTimeZoneSupport: (timeZoneId: string) =>
+      inspectTimeZoneSupport(temporal(), timeZoneId),
     toCorrectedInstant: (input: ToCorrectedInstantInput) =>
       correct.toCorrectedInstant(temporal(), input),
     toCorrectedZonedTime: (input: ToCorrectedZonedTimeInput) =>

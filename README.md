@@ -53,10 +53,22 @@ The examples in this section are typechecked by `test/readme.test.ts`.
 
 ```ts
 import {
+  inspectTimeZoneSupport,
+  TimeZoneSupportStatus,
   toCorrectedInstant,
   toCorrectedZonedTime,
   toTimeZoneLabel
 } from "@clhbid/canadian-time-zone-hotpatch";
+
+// Guard first when the identifier is not vetted — often it comes straight
+// from Intl.DateTimeFormat().resolvedOptions().timeZone or stored data. The
+// correction functions throw UnknownTimeZoneError for a zone the host does
+// not recognize; inspectTimeZoneSupport never throws, so it is safe to call
+// unconditionally in a render.
+const support = inspectTimeZoneSupport("America/Edmonton");
+if (support.status === TimeZoneSupportStatus.unknown) {
+  // Fall back: skip correction, or show the stored value uncorrected.
+}
 
 // Display a stored instant. Pass the instant and the zone you are showing it
 // in — often the viewer's own. Format with the zone that comes back, never
@@ -110,6 +122,7 @@ import { Temporal } from "temporal-polyfill";
 // given here rather than on a global. Nothing is assigned to globalThis.
 const {
   inspectHostSupport,
+  inspectTimeZoneSupport,
   toCorrectedInstant,
   toCorrectedZonedTime,
   toTimeZoneLabel

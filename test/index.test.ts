@@ -11,6 +11,7 @@ describe("package root", () => {
       "UnknownTimeZoneError",
       "createHotpatch",
       "inspectHostSupport",
+      "inspectTimeZoneSupport",
       "toCorrectedInstant",
       "toCorrectedZonedTime",
       "toTimeZoneLabel"
