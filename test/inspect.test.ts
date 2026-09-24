@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { inspectTimeZoneSupport as inspect } from "../src/inspect.js";
+import { rules } from "../src/rules.js";
 import type {
   HostModule,
   SimulatedHostState,
@@ -202,6 +203,11 @@ describe("inspectHostSupport", () => {
         "ab-permanent-time-2026",
         "bc-permanent-time-2026",
         "mb-permanent-time-2026"
+      ],
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "stale" },
+        { ruleId: "bc-permanent-time-2026", status: "stale" },
+        { ruleId: "mb-permanent-time-2026", status: "stale" }
       ]
     });
   });
@@ -210,7 +216,12 @@ describe("inspectHostSupport", () => {
     hostState.tzdata = "current";
     expect(inspectHostSupport()).toEqual({
       status: "current",
-      staleRuleIds: []
+      staleRuleIds: [],
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "current" },
+        { ruleId: "bc-permanent-time-2026", status: "current" },
+        { ruleId: "mb-permanent-time-2026", status: "current" }
+      ]
     });
   });
 
@@ -220,15 +231,37 @@ describe("inspectHostSupport", () => {
       "America/Vancouver": "current",
       "America/Winnipeg": "current"
     };
-    expect(inspectHostSupport()).toEqual({
+    const support = inspectHostSupport();
+    expect(support).toEqual({
       status: "stale",
-      staleRuleIds: ["ab-permanent-time-2026"]
+      staleRuleIds: ["ab-permanent-time-2026"],
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "stale" },
+        { ruleId: "bc-permanent-time-2026", status: "current" },
+        { ruleId: "mb-permanent-time-2026", status: "current" }
+      ]
     });
+    expect(support.staleRuleIds).toEqual(
+      support.ruleSupport
+        .filter((entry) => entry.status !== "current")
+        .map((entry) => entry.ruleId)
+    );
+  });
+
+  it("has one ruleSupport entry per exported rule, in the same order", () => {
+    const support = inspectHostSupport();
+    expect(support.ruleSupport.map((entry) => entry.ruleId)).toEqual(
+      rules.map((rule) => rule.ruleId)
+    );
   });
 
   it("returns a frozen result with a frozen rule list", () => {
     const support = inspectHostSupport();
     expect(Object.isFrozen(support)).toBe(true);
     expect(Object.isFrozen(support.staleRuleIds)).toBe(true);
+    expect(Object.isFrozen(support.ruleSupport)).toBe(true);
+    for (const entry of support.ruleSupport) {
+      expect(Object.isFrozen(entry)).toBe(true);
+    }
   });
 });

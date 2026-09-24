@@ -8,7 +8,7 @@
 import { isKnownTimeZoneId, observeOffset } from "./host.js";
 import { findRule, rules } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
-import type { HostSupport, TimeZoneSupport } from "./types.js";
+import type { HostSupport, RuleSupport, TimeZoneSupport } from "./types.js";
 import { TimeZoneSupportStatus } from "./types.js";
 
 /**
@@ -73,18 +73,25 @@ export function inspectTimeZoneSupport(
  * since it cannot be assured to handle the zone correctly.
  */
 export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
-  const staleRuleIds = rules
-    .filter(
-      (rule) =>
-        inspectTimeZoneSupport(temporal, rule.canonicalTimeZoneId).status !==
-        TimeZoneSupportStatus.current
-    )
-    .map((rule) => rule.ruleId);
+  const ruleSupport = rules.map((rule) => {
+    const support = inspectTimeZoneSupport(temporal, rule.canonicalTimeZoneId);
+    return Object.freeze({
+      ruleId: rule.ruleId,
+      status:
+        support.status === TimeZoneSupportStatus.current
+          ? TimeZoneSupportStatus.current
+          : TimeZoneSupportStatus.stale
+    } satisfies RuleSupport);
+  });
+  const staleRuleIds = ruleSupport
+    .filter((entry) => entry.status !== TimeZoneSupportStatus.current)
+    .map((entry) => entry.ruleId);
   return Object.freeze({
     status:
       staleRuleIds.length > 0
         ? TimeZoneSupportStatus.stale
         : TimeZoneSupportStatus.current,
-    staleRuleIds: Object.freeze(staleRuleIds)
+    staleRuleIds: Object.freeze(staleRuleIds),
+    ruleSupport: Object.freeze(ruleSupport)
   } satisfies HostSupport);
 }
