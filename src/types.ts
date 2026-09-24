@@ -13,28 +13,15 @@ export interface TimeZoneLabel {
   readonly short: string;
 }
 
-/**
- * Every value a `status` takes. Each member carries its own meaning, so it
- * can be read by hovering the value at a call site rather than by finding
- * this declaration.
- */
+/** Every value a `status` takes. */
 export const TimeZoneSupportStatus = Object.freeze({
-  /**
-   * The host agrees with the rule at the probed instant, or the rule has not
-   * diverged from seasonal time by then. No correction is required.
-   */
+  /** The host agrees with the rule at the probed instant, before or after divergence. */
   current: "current",
-  /**
-   * The host reports a legacy seasonal offset where the rule mandates a
-   * permanent one. Correction is required.
-   */
+  /** The host reports a seasonal offset where the rule mandates a permanent one. */
   stale: "stale",
-  /** A time zone the host recognizes and no rule in this package governs. */
+  /** A zone this host recognizes and no rule governs. */
   not_applicable: "not_applicable",
-  /**
-   * Not a time zone identifier this host recognizes — which is a fact about
-   * this host, not about the identifier. Correcting one throws.
-   */
+  /** Not a zone this host recognizes; correcting one throws. */
   unknown: "unknown"
 } as const);
 
