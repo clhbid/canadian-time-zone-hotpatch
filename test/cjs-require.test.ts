@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { Temporal } from "temporal-polyfill";
 import { beforeAll, describe, expect, it } from "vitest";
 import type * as pkg from "../src/index.js";
+import { packageRootExportNames } from "./package-root-export-names.js";
 
 /*
  * Node's CommonJS loader resolves the package by its own name from a module
@@ -28,18 +29,7 @@ describe("require() from CommonJS", () => {
   });
 
   it("exposes the package's runtime surface", () => {
-    expect(Object.keys(load()).sort()).toEqual([
-      "Disambiguation",
-      "MissingTemporalError",
-      "OffsetBearingWallTimeError",
-      "TimeZoneSupportStatus",
-      "UnknownTimeZoneError",
-      "createHotpatch",
-      "inspectHostSupport",
-      "toCorrectedInstant",
-      "toCorrectedZonedTime",
-      "toTimeZoneLabel"
-    ]);
+    expect(Object.keys(load()).sort()).toEqual(packageRootExportNames);
   });
 
   it("corrects an instant", () => {

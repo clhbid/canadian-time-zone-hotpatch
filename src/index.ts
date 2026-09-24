@@ -18,6 +18,8 @@ import { requireGlobalTemporal } from "./temporal.js";
 export { OffsetBearingWallTimeError, UnknownTimeZoneError } from "./correct.js";
 export { createHotpatch } from "./hotpatch.js";
 export type { Hotpatch, HotpatchOptions } from "./hotpatch.js";
+export { rules } from "./rules.js";
+export type { TimeZoneRule } from "./rules.js";
 export { MissingTemporalError } from "./temporal.js";
 export type { TemporalNamespace } from "./temporal.js";
 export { Disambiguation, TimeZoneSupportStatus } from "./types.js";
