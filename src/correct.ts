@@ -53,9 +53,9 @@ function carriesOffsetDesignator(wallTime: string): boolean {
 }
 
 /**
- * Corrects an instant for display; the instant itself never changes. Throws
- * `UnknownTimeZoneError` for a zone the host does not recognize and
- * Temporal's `RangeError` for a malformed instant.
+ * Corrects an instant for display; the instant itself never changes.
+ * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
+ * @throws {RangeError} When `instant` is malformed.
  */
 export function toCorrectedZonedTime(
   temporal: TemporalNamespace,
@@ -78,11 +78,10 @@ export function toCorrectedZonedTime(
 }
 
 /**
- * Computes the instant a wall-clock reading denotes. Throws
- * `OffsetBearingWallTimeError` when the input carries a UTC offset or `Z`,
- * `UnknownTimeZoneError` for a zone the host does not recognize, and
- * Temporal's `RangeError` for a malformed wall time or, under `reject`, a
- * repeated or skipped one.
+ * Computes the instant a wall-clock reading denotes.
+ * @throws {OffsetBearingWallTimeError} When `wallTime` carries a UTC offset or `Z`.
+ * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
+ * @throws {RangeError} When `wallTime` is malformed, or under `reject`, denotes a repeated or skipped time.
  */
 export function toCorrectedInstant(
   temporal: TemporalNamespace,

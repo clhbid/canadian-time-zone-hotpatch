@@ -11,7 +11,10 @@
  */
 import * as correct from "./correct.js";
 import type { Hotpatch } from "./hotpatch.js";
-import { inspectHostSupport as inspect } from "./inspect.js";
+import {
+  inspectHostSupport as inspect,
+  inspectTimeZoneSupport as inspectZone
+} from "./inspect.js";
 import { toTimeZoneLabel as label } from "./labels.js";
 import { requireGlobalTemporal } from "./temporal.js";
 
@@ -43,18 +46,48 @@ export type {
  * the others in with it.
  */
 
-/** Asks whether this host's timezone data knows the rules this package patches. */
+/**
+ * Asks whether this host's timezone data knows the rules this package
+ * patches.
+ * @throws {MissingTemporalError} When no Temporal implementation is available.
+ */
 export const inspectHostSupport: Hotpatch["inspectHostSupport"] = () =>
   inspect(requireGlobalTemporal());
 
-/** Computes the instant a wall-clock reading denotes. */
+/**
+ * Inspects a single zone's support without correcting it. No input makes it
+ * throw, so it is safe to call unconditionally in a render, guarding before a
+ * call to `toCorrectedZonedTime` or `toCorrectedInstant`.
+ * @throws {MissingTemporalError} When no Temporal implementation is available.
+ */
+export const inspectTimeZoneSupport: Hotpatch["inspectTimeZoneSupport"] = (
+  timeZoneId
+) => inspectZone(requireGlobalTemporal(), timeZoneId);
+
+/**
+ * Computes the instant a wall-clock reading denotes.
+ * @throws {MissingTemporalError} When no Temporal implementation is available.
+ * @throws {OffsetBearingWallTimeError} When `wallTime` carries a UTC offset or `Z`.
+ * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
+ * @throws {RangeError} When `wallTime` is malformed, or under `reject`, denotes a repeated or skipped time.
+ */
 export const toCorrectedInstant: Hotpatch["toCorrectedInstant"] = (input) =>
   correct.toCorrectedInstant(requireGlobalTemporal(), input);
 
-/** Corrects an instant for display; the instant itself never changes. */
+/**
+ * Corrects an instant for display; the instant itself never changes. Guard
+ * with `inspectTimeZoneSupport` first when `timeZoneId` is not vetted.
+ * @throws {MissingTemporalError} When no Temporal implementation is available.
+ * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
+ * @throws {RangeError} When `instant` is malformed.
+ */
 export const toCorrectedZonedTime: Hotpatch["toCorrectedZonedTime"] = (input) =>
   correct.toCorrectedZonedTime(requireGlobalTemporal(), input);
 
-/** The approved label for a governed zone at an instant, or `undefined`. */
+/**
+ * The approved label for a governed zone at an instant, or `undefined`. No
+ * input makes it throw, so it is safe to call unconditionally in a render.
+ * @throws {MissingTemporalError} When no Temporal implementation is available.
+ */
 export const toTimeZoneLabel: Hotpatch["toTimeZoneLabel"] = (input) =>
   label(requireGlobalTemporal(), input);

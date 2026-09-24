@@ -6,6 +6,7 @@ export const packageRootExportNames = [
   "UnknownTimeZoneError",
   "createHotpatch",
   "inspectHostSupport",
+  "inspectTimeZoneSupport",
   "rules",
   "toCorrectedInstant",
   "toCorrectedZonedTime",

@@ -44,4 +44,16 @@ describe("require() from CommonJS", () => {
 
     expect(display.offset).toBe("-06:00");
   });
+
+  it("reaches TimeZoneSupportStatus.unknown through inspectTimeZoneSupport", () => {
+    const built = load();
+    const { inspectTimeZoneSupport } = built.createHotpatch({
+      temporal: Temporal
+    });
+
+    expect(inspectTimeZoneSupport("Mars/Olympus_Mons")).toEqual({
+      status: built.TimeZoneSupportStatus.unknown,
+      timeZoneId: "Mars/Olympus_Mons"
+    });
+  });
 });

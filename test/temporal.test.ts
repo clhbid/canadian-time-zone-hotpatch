@@ -1,6 +1,7 @@
 import { Temporal as PolyfillTemporal } from "temporal-polyfill";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHotpatch } from "../src/hotpatch.js";
+import type { Hotpatch } from "../src/hotpatch.js";
 import { MissingTemporalError } from "../src/index.js";
 import type { TemporalNamespace } from "../src/temporal.js";
 import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
@@ -63,28 +64,59 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/**
+ * A call of each function that reaches for a Temporal implementation, keyed by
+ * `Hotpatch` so that a function added later fails to typecheck until it is
+ * given one here. Both the top-level exports and an instance satisfy the
+ * parameter, so every case runs down both paths.
+ */
+const callsNeedingTemporal: Record<keyof Hotpatch, (on: Hotpatch) => unknown> =
+  {
+    inspectHostSupport: (on) => on.inspectHostSupport(),
+    inspectTimeZoneSupport: (on) =>
+      on.inspectTimeZoneSupport(edmonton.timeZoneId),
+    toCorrectedInstant: (on) =>
+      on.toCorrectedInstant({
+        timeZoneId: edmonton.timeZoneId,
+        wallTime: "2026-11-02T06:00:00",
+        disambiguation: "compatible"
+      }),
+    toCorrectedZonedTime: (on) => on.toCorrectedZonedTime(edmonton),
+    toTimeZoneLabel: (on) => on.toTimeZoneLabel(edmonton)
+  };
+
+const everyCall = Object.entries(callsNeedingTemporal);
+
 describe("a missing Temporal implementation", () => {
-  it.each([
-    "inspectHostSupport",
-    "toCorrectedInstant",
-    "toCorrectedZonedTime",
-    "toTimeZoneLabel"
-  ])(
-    "throws MissingTemporalError from %s with no global and nothing supplied",
-    async (name) => {
+  // The type above pins the table to the interface; this pins it to what
+  // `createHotpatch` actually returns, so neither can drift from the table.
+  it("is exercised through every function an instance exposes", () => {
+    expect(Object.keys(callsNeedingTemporal).sort()).toEqual(
+      Object.keys(createHotpatch({ temporal: PolyfillTemporal })).sort()
+    );
+  });
+
+  it.each(everyCall)(
+    "throws MissingTemporalError from the top-level %s with no global and nothing supplied",
+    async (_name, call) => {
       vi.stubGlobal("Temporal", undefined);
       const pkg = await import("../src/index.js");
-      const call = () =>
-        (pkg[name as keyof typeof pkg] as (input: unknown) => unknown)({
-          ...edmonton,
-          wallTime: "2026-11-02T06:00:00",
-          disambiguation: "compatible"
-        });
+      const attempt = () => call(pkg);
 
-      expect(call).toThrow(MissingTemporalError);
+      expect(attempt).toThrow(MissingTemporalError);
       // Both remedies are named, so the message says what to do next.
-      expect(call).toThrow(/global Temporal/);
-      expect(call).toThrow(/createHotpatch/);
+      expect(attempt).toThrow(/global Temporal/);
+      expect(attempt).toThrow(/createHotpatch/);
+    }
+  );
+
+  it.each(everyCall)(
+    "throws MissingTemporalError from %s on an instance built without one",
+    (_name, call) => {
+      const hotpatch = createHotpatch();
+      vi.stubGlobal("Temporal", undefined);
+
+      expect(() => call(hotpatch)).toThrow(MissingTemporalError);
     }
   );
 
@@ -173,6 +205,39 @@ describe("a global Temporal implementation", () => {
     const { toCorrectedZonedTime } = await import("../src/index.js");
 
     expect(toCorrectedZonedTime(edmonton)).toMatchObject(corrected);
+  });
+
+  // Each top-level export is a wrapper of its own around the same
+  // implementation an instance calls, so one that dropped or mixed up what it
+  // was passed would otherwise surface only in a consumer.
+  it.each(everyCall)(
+    "answers from the top-level %s what an instance answers",
+    async (_name, call) => {
+      vi.stubGlobal("Temporal", PolyfillTemporal);
+      const pkg = await import("../src/index.js");
+
+      expect(call(pkg)).toEqual(
+        call(createHotpatch({ temporal: PolyfillTemporal }))
+      );
+    }
+  );
+
+  // Asserted against values rather than against an instance: a wrapper that
+  // ignored its argument would agree with one that did the same.
+  it("classifies a governed and an unrecognized zone through the export", async () => {
+    vi.stubGlobal("Temporal", PolyfillTemporal);
+
+    const { inspectTimeZoneSupport } = await import("../src/index.js");
+
+    expect(inspectTimeZoneSupport(edmonton.timeZoneId)).toEqual({
+      status: "stale",
+      timeZoneId: "America/Edmonton",
+      ruleId: "ab-permanent-time-2026"
+    });
+    expect(inspectTimeZoneSupport("Mars/Olympus_Mons")).toEqual({
+      status: "unknown",
+      timeZoneId: "Mars/Olympus_Mons"
+    });
   });
 
   it("is picked up even when it is installed after the package is imported", async () => {

@@ -53,43 +53,43 @@ The examples in this section are typechecked by `test/readme.test.ts`.
 
 ```ts
 import {
+  inspectTimeZoneSupport,
+  TimeZoneSupportStatus,
   toCorrectedInstant,
   toCorrectedZonedTime,
   toTimeZoneLabel
 } from "@clhbid/canadian-time-zone-hotpatch";
 
-// Display a stored instant. Pass the instant and the zone you are showing it
-// in — often the viewer's own. Format with the zone that comes back, never
-// the one you passed: on a stale host they differ, and that difference is the
-// correction.
-const display = toCorrectedZonedTime({
-  instant: "2026-11-15T19:00:00Z",
-  timeZoneId: "America/Edmonton"
-});
-// display.timeZoneId — "Etc/GMT+6" on a stale host, "America/Edmonton" on a current one
-// display.offset     — "-06:00" either way
+// Guard an unvetted identifier: correcting an unknown zone throws.
+function show(instant: string, timeZoneId: string): string {
+  if (
+    inspectTimeZoneSupport(timeZoneId).status === TimeZoneSupportStatus.unknown
+  ) {
+    // No correction is possible, so fall back rather than throw.
+    return new Date(instant).toISOString();
+  }
 
-// Name the zone separately, passing the same identifier you corrected with.
-// It returns nothing before that zone's first divergence and for a zone no
-// rule governs — fall back to the host's own name then. No input makes it
-// throw, and the host is never consulted.
-const label = toTimeZoneLabel({
-  instant: "2026-11-15T19:00:00Z",
-  timeZoneId: "America/Edmonton"
-});
-// label — { long: "Alberta Time", short: "ABT" }
+  // Format with the zone that comes back, never the one you passed.
+  const display = toCorrectedZonedTime({ instant, timeZoneId });
+  // display.timeZoneId — "Etc/GMT+6" on a stale host, "America/Edmonton" on a current one
+  // display.offset     — "-06:00" either way
 
-const formatted = new Intl.DateTimeFormat("en-CA", {
-  dateStyle: "long",
-  timeStyle: "short",
-  timeZone: display.timeZoneId
-}).format(new Date(display.instant));
-const shown = `${formatted} ${label?.short ?? ""}`;
+  // Undefined before the zone's first divergence, and for an ungoverned zone.
+  const label = toTimeZoneLabel({ instant, timeZoneId });
+  // label — { long: "Alberta Time", short: "ABT" }
+
+  const formatted = new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: display.timeZoneId
+  }).format(new Date(display.instant));
+  return `${formatted} ${label?.short ?? ""}`;
+}
+
+const shown = show("2026-11-15T19:00:00Z", "America/Edmonton");
 // "November 15, 2026 at 1:00 p.m. ABT" — an uncorrected host says 12:00 p.m.
 
-// Parse a wall-clock entry. A wall-clock reading carries no offset of its own.
-// "reject" refuses a reading the zone repeats or skips rather than silently
-// picking one of two moments.
+// A wall time carries no offset; "reject" refuses repeated or skipped ones.
 const entry = toCorrectedInstant({
   wallTime: "2026-12-15T10:00:00",
   timeZoneId: "America/Edmonton",
@@ -110,6 +110,7 @@ import { Temporal } from "temporal-polyfill";
 // given here rather than on a global. Nothing is assigned to globalThis.
 const {
   inspectHostSupport,
+  inspectTimeZoneSupport,
   toCorrectedInstant,
   toCorrectedZonedTime,
   toTimeZoneLabel
