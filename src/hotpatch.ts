@@ -36,47 +36,21 @@ export interface HotpatchOptions {
  * The package's functions bound to one Temporal implementation. The error
  * classes stay top-level exports: they are matched with `instanceof` and are
  * never rebound per instance.
- *
- * This is the single source of truth for what each function does and
- * throws; the top-level functions in `index.ts` are the same behaviour
- * bound to `globalThis.Temporal` and do not repeat these docs.
  */
 export interface Hotpatch {
-  /**
-   * Asks whether this host's timezone data knows the rules this package
-   * patches.
-   * @throws {MissingTemporalError} When no Temporal implementation is available.
-   */
+  /** See the top-level `inspectHostSupport` export for behaviour and thrown errors. */
   inspectHostSupport(): HostSupport;
 
-  /**
-   * Inspects a single zone's support without correcting it. No input makes
-   * it throw, so it is safe to call unconditionally in a render, guarding
-   * before a call to `toCorrectedZonedTime` or `toCorrectedInstant`.
-   * @throws {MissingTemporalError} When no Temporal implementation is available.
-   */
+  /** See the top-level `inspectTimeZoneSupport` export for behaviour and thrown errors. */
   inspectTimeZoneSupport(timeZoneId: string): TimeZoneSupport;
 
-  /**
-   * Computes the instant a wall-clock reading denotes.
-   * @throws {OffsetBearingWallTimeError} When `wallTime` carries a UTC offset or `Z`.
-   * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
-   * @throws {RangeError} When `wallTime` is malformed, or under `reject`, denotes a repeated or skipped time.
-   */
+  /** See the top-level `toCorrectedInstant` export for behaviour and thrown errors. */
   toCorrectedInstant(input: ToCorrectedInstantInput): CorrectedZonedTime;
 
-  /**
-   * Corrects an instant for display; the instant itself never changes. Guard
-   * with `inspectTimeZoneSupport` first when `timeZoneId` is not vetted.
-   * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
-   * @throws {RangeError} When `instant` is malformed.
-   */
+  /** See the top-level `toCorrectedZonedTime` export for behaviour and thrown errors. */
   toCorrectedZonedTime(input: ToCorrectedZonedTimeInput): CorrectedZonedTime;
 
-  /**
-   * The approved label for a governed zone at an instant, or `undefined`. No
-   * input makes it throw, so it is safe to call unconditionally in a render.
-   */
+  /** See the top-level `toTimeZoneLabel` export for behaviour and thrown errors. */
   toTimeZoneLabel(input: ToTimeZoneLabelInput): TimeZoneLabel | undefined;
 }
 
