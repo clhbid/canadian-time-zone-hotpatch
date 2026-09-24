@@ -42,10 +42,14 @@
     "LICENSE"
   ],
   "scripts": {
+    "generate:version": "node scripts/generate-version.mjs",
     "clean": "node --eval \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "prebuild": "npm run generate:version",
     "build": "npm run clean && tsc -p tsconfig.build.json",
+    "pretypecheck": "npm run generate:version",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && vitest run",
+    "pretest:watch": "npm run generate:version",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --check .",
