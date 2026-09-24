@@ -227,7 +227,8 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 ## Limitations
 
 - This is not a timezone database. It corrects only the legislated changes above; every other zone
-  passes through to the host.
+  passes through to the host unchanged, pinned against the host itself by
+  [`test/pass-through.test.ts`](./test/pass-through.test.ts).
 - Only the approved English labels are bundled, and only from a rule's first divergence onwards.
   Before it, `toTimeZoneLabel` returns nothing and a caller falls back to the host's own name for
   the zone (MST/MDT, PST/PDT, CST/CDT). The package derives no label from `Intl` itself.
