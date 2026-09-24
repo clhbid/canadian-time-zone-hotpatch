@@ -2,14 +2,9 @@
  * The boundary matrix for approved labels lives here alone: the correction
  * specs assert offsets and zones, not names.
  *
- * The whole suite runs against a host that recognizes no time zone at all,
- * because an approved label is a fact about a jurisdiction's statute and not
- * about the running host — and a host this blind is the very reason the
- * package exists. Every assertion below therefore also pins that the lookup
- * consults nothing but the rule table and the supplied Temporal, so no
- * answer here depends on the runner's installed tzdata. A host-recognition
- * gate was proposed in review and rejected on those grounds; if one is ever
- * reintroduced, this file fails wholesale.
+ * The whole suite runs against a host that recognizes no time zone, so every
+ * case below also pins that labelling reads only the rule table and the
+ * supplied Temporal. Make it consult the host and this file fails wholesale.
  */
 import { describe, expect, it, vi } from "vitest";
 import { labels } from "../src/labels.js";

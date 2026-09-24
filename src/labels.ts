@@ -25,26 +25,16 @@ export const labels: Readonly<Record<RuleId, TimeZoneLabel>> = Object.freeze({
 });
 
 /**
- * The approved label for a governed zone at an instant, or `undefined` when
- * there is none: before that rule's first divergence, and for any identifier
- * no rule governs — an ordinary zone, a malformed string, and the rules' own
- * fixed `Etc/GMT` correction zones, which are legitimate zones in their own
- * right and name no jurisdiction.
+ * The approved label for a governed zone at an instant, or `undefined` before
+ * that rule's first divergence and for any identifier no rule governs.
  *
- * The rule table is the sole authority here, and the host is not consulted at
- * all. An approved label is a fact about a jurisdiction's statute, true on a
- * host that has never heard of the zone — indeed most true there, since such
- * a host is the reason this package exists. Whether the host can *format* the
- * zone is the correction functions' question, and they throw when it cannot.
+ * Never throws, unlike the correction functions, so it can be called
+ * unconditionally while formatting. A caller with no label falls back to the
+ * host's own name; the package derives none from `Intl`.
  *
- * Unlike those functions, this never throws, so it can be called
- * unconditionally from a formatting path. A caller with no label falls back
- * to the host's own name for the zone; the package derives none from `Intl`.
- *
- * The comparison is at instant granularity. A wall time of 01:30 on the
- * divergence morning resolves to an instant before the boundary, so it gets
- * no label even where the offset has already been corrected — at 01:30 the
- * clock genuinely is still on seasonal time.
+ * The rule table is the sole authority: a label is a fact about a statute, so
+ * the host is not consulted and a governed zone is labelled whether or not
+ * the host knows it.
  */
 export function toTimeZoneLabel(
   temporal: TemporalNamespace,
