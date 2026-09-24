@@ -20,6 +20,7 @@ import type {
   ToCorrectedInstantInput,
   ToCorrectedZonedTimeInput
 } from "./types.js";
+import { TimeZoneSupportStatus } from "./types.js";
 
 /** Thrown when correction is asked for a zone the host does not recognize. */
 export class UnknownTimeZoneError extends RangeError {
@@ -65,7 +66,7 @@ export function toCorrectedZonedTime(
     input.timeZoneId,
     input.instant
   );
-  if (support.status === "unknown") {
+  if (support.status === TimeZoneSupportStatus.unknown) {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
   const rule = findRule(support.timeZoneId);
@@ -96,7 +97,7 @@ export function toCorrectedInstant(
   const local = temporal.PlainDateTime.from(input.wallTime);
 
   const probe = inspectTimeZoneSupport(temporal, input.timeZoneId);
-  if (probe.status === "unknown") {
+  if (probe.status === TimeZoneSupportStatus.unknown) {
     throw new UnknownTimeZoneError(input.timeZoneId);
   }
 
@@ -123,7 +124,7 @@ function effectiveTimeZoneId(
   support: TimeZoneSupport,
   rule: TimeZoneRule | undefined
 ): string {
-  return support.status === "stale" && rule
+  return support.status === TimeZoneSupportStatus.stale && rule
     ? rule.fixedTimeZoneId
     : support.timeZoneId;
 }
@@ -153,5 +154,5 @@ function toCorrected(
     timeZoneId,
     offset,
     support
-  });
+  } satisfies CorrectedZonedTime);
 }
