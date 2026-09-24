@@ -138,11 +138,7 @@ const host = inspectHostSupport();
 const event = {
   status: host.status, // "current" | "stale"
   staleRules: host.staleRuleIds.join(","), // "" when nothing is stale
-  // Tags the event with the rule set that produced it, so a newly released
-  // rule set can be measured on its own and telemetry dedupes once per
-  // session on the pair. Equal to the version this package published as —
-  // no `package.json` import required.
-  packageVersion: version
+  packageVersion: version // tags the rule set this event was measured against
 };
 // On a host that has the B.C. and Manitoba rules but not Alberta's:
 // { status: "stale", staleRules: "ab-permanent-time-2026", packageVersion: "0.3.0" }
