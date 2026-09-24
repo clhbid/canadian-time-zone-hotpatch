@@ -126,16 +126,23 @@ const display = toCorrectedZonedTime({
 ### Reporting host support to analytics
 
 ```ts
-import { inspectHostSupport } from "@clhbid/canadian-time-zone-hotpatch";
+import {
+  inspectHostSupport,
+  version
+} from "@clhbid/canadian-time-zone-hotpatch";
 
-declare function send(event: { rule_id: string; rule_status: string }): void;
+declare function send(event: {
+  rule_id: string;
+  rule_status: string;
+  package_version: string;
+}): void;
 
 // Once per session. No arguments: the package probes every rule it owns, at
 // each rule's own first divergence, so the answer describes this host's
 // timezone data rather than where the visitor happens to be.
 const host = inspectHostSupport();
 for (const { ruleId, status } of host.ruleSupport) {
-  send({ rule_id: ruleId, rule_status: status });
+  send({ rule_id: ruleId, rule_status: status, package_version: version });
 }
 ```
 
@@ -223,7 +230,8 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 ## Limitations
 
 - This is not a timezone database. It corrects only the legislated changes above; every other zone
-  passes through to the host.
+  passes through to the host unchanged, pinned against the host itself by
+  [`test/pass-through.test.ts`](./test/pass-through.test.ts).
 - Only the approved English labels are bundled, and only from a rule's first divergence onwards.
   Before it, `toTimeZoneLabel` returns nothing and a caller falls back to the host's own name for
   the zone (MST/MDT, PST/PDT, CST/CDT). The package derives no label from `Intl` itself.
@@ -235,7 +243,8 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 
 CLHbid owns the rule table in this repository. A rule's `ruleId` is stable for the life of the rule;
 a change to its offset, instants, or aliases ships as a new package version under semantic
-versioning, not as per-rule version metadata. Telemetry keys on `ruleId` and the package version.
+versioning, not as per-rule version metadata. Telemetry keys on `ruleId` and the package version,
+read from the `version` export rather than `package.json`.
 
 The two halves of this package have different lifetimes. The **offset correction** is temporary and
 retires as described below. The **approved label override** does not: host data will never supply
