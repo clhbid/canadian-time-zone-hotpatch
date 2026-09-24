@@ -248,6 +248,33 @@ describe("inspectHostSupport", () => {
     );
   });
 
+  it("normalizes unavailable governed-zone host data to stale", async () => {
+    hostState.tzdata = "current";
+    const host = await import("../src/host.js");
+    const observeOffset = host.observeOffset;
+    const observeOffsetSpy = vi
+      .spyOn(host, "observeOffset")
+      .mockImplementation((timeZoneId, instant) =>
+        timeZoneId === "America/Vancouver"
+          ? undefined
+          : observeOffset(timeZoneId, instant)
+      );
+
+    try {
+      expect(inspectHostSupport()).toEqual({
+        status: "stale",
+        staleRuleIds: ["bc-permanent-time-2026"],
+        ruleSupport: [
+          { ruleId: "ab-permanent-time-2026", status: "current" },
+          { ruleId: "bc-permanent-time-2026", status: "stale" },
+          { ruleId: "mb-permanent-time-2026", status: "current" }
+        ]
+      });
+    } finally {
+      observeOffsetSpy.mockRestore();
+    }
+  });
+
   it("has one ruleSupport entry per exported rule, in the same order", () => {
     const support = inspectHostSupport();
     expect(support.ruleSupport.map((entry) => entry.ruleId)).toEqual(
