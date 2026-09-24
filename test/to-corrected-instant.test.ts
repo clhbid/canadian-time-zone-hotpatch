@@ -125,7 +125,9 @@ describe("toCorrectedInstant", () => {
   it.each([
     ["America/Edmonton", "Etc/GMT+6", "2026-12-25T16:00:00Z"],
     ["America/Vancouver", "Etc/GMT+7", "2026-12-25T17:00:00Z"],
-    ["America/Winnipeg", "Etc/GMT+5", "2026-12-25T15:00:00Z"]
+    ["America/Winnipeg", "Etc/GMT+5", "2026-12-25T15:00:00Z"],
+    ["America/Yellowknife", "Etc/GMT+6", "2026-12-25T16:00:00Z"],
+    ["America/Inuvik", "Etc/GMT+6", "2026-12-25T16:00:00Z"]
   ])(
     "corrects %s wall times after divergence via %s",
     (timeZoneId, fixed, instant) => {
@@ -136,6 +138,27 @@ describe("toCorrectedInstant", () => {
       });
       expect(result.timeZoneId).toBe(fixed);
       expect(result.instant).toBe(instant);
+    }
+  );
+
+  it.each([
+    ["America/Yellowknife", "nt-yellowknife-permanent-time-2026"],
+    ["America/Inuvik", "nt-inuvik-permanent-time-2026"]
+  ])(
+    "resolves a %s wall time under its own rule on a stale host",
+    (timeZoneId, ruleId) => {
+      expect(
+        toCorrectedInstant({
+          wallTime: "2026-12-15T10:00:00",
+          timeZoneId,
+          disambiguation: "reject"
+        })
+      ).toEqual({
+        instant: "2026-12-15T16:00:00Z",
+        timeZoneId: "Etc/GMT+6",
+        offset: "-06:00",
+        support: { status: "stale", timeZoneId, ruleId }
+      });
     }
   );
 

@@ -93,6 +93,40 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     // - https://web2.gov.mb.ca/laws/statutes/2023/c00423.php?lang=en
     // - https://news.gov.mb.ca/news/?item=75397
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00"
+  }),
+  Object.freeze({
+    ruleId: "nt-yellowknife-permanent-time-2026",
+    canonicalTimeZoneId: "America/Yellowknife",
+    // `Canada/Mountain` belongs to Alberta, so this rule claims no alias.
+    aliases: Object.freeze([]),
+    jurisdiction: "Northwest Territories",
+    offset: "-06:00",
+    fixedTimeZoneId: "Etc/GMT+6",
+    // The regulations establishing Northwest Territories Time came into force
+    // on August 21, 2026; triage found no registration number, so the
+    // announcement is the citable source. No short code has been published,
+    // so this rule bundles no label.
+    // Source: https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change
+    legalEffectiveInstant: "2026-08-21T00:00:00-06:00",
+    // The next scheduled "fall back" is skipped; clocks stay at -06:00.
+    firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
+  }),
+  Object.freeze({
+    ruleId: "nt-inuvik-permanent-time-2026",
+    canonicalTimeZoneId: "America/Inuvik",
+    // `Canada/Mountain` belongs to Alberta, so this rule claims no alias.
+    aliases: Object.freeze([]),
+    jurisdiction: "Northwest Territories",
+    offset: "-06:00",
+    fixedTimeZoneId: "Etc/GMT+6",
+    // Governed separately from Yellowknife: the two zones go current at
+    // different times, because Yellowknife rides on Edmonton's tzdata while
+    // Inuvik needs its own upstream fix, and a rule each lets host inspection
+    // say which is which.
+    // Source: https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change
+    legalEffectiveInstant: "2026-08-21T00:00:00-06:00",
+    // The next scheduled "fall back" is skipped; clocks stay at -06:00.
+    firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
   })
 ]);
 

@@ -176,11 +176,20 @@ shipped signatures and behavioural detail.
 
 ## Governed rules
 
-| Jurisdiction     | Canonical zone      | Alias             | Permanent offset | Fixed zone  | Label                        |
-| ---------------- | ------------------- | ----------------- | ---------------- | ----------- | ---------------------------- |
-| Alberta          | `America/Edmonton`  | `Canada/Mountain` | `-06:00`         | `Etc/GMT+6` | Alberta Time (ABT)           |
-| British Columbia | `America/Vancouver` | `Canada/Pacific`  | `-07:00`         | `Etc/GMT+7` | Pacific Time (PCT)           |
-| Manitoba         | `America/Winnipeg`  | `Canada/Central`  | `-05:00`         | `Etc/GMT+5` | Manitoba Standard Time (MBT) |
+| Jurisdiction          | Canonical zone        | Alias             | Permanent offset | Fixed zone  | Label                        |
+| --------------------- | --------------------- | ----------------- | ---------------- | ----------- | ---------------------------- |
+| Alberta               | `America/Edmonton`    | `Canada/Mountain` | `-06:00`         | `Etc/GMT+6` | Alberta Time (ABT)           |
+| British Columbia      | `America/Vancouver`   | `Canada/Pacific`  | `-07:00`         | `Etc/GMT+7` | Pacific Time (PCT)           |
+| Manitoba              | `America/Winnipeg`    | `Canada/Central`  | `-05:00`         | `Etc/GMT+5` | Manitoba Standard Time (MBT) |
+| Northwest Territories | `America/Yellowknife` | —                 | `-06:00`         | `Etc/GMT+6` | —                            |
+| Northwest Territories | `America/Inuvik`      | —                 | `-06:00`         | `Etc/GMT+6` | —                            |
+
+The two Northwest Territories zones are governed by a rule each rather than one rule for the
+territory: `America/Yellowknife` is a backward-compatibility link that rides on Edmonton's host
+data while `America/Inuvik` needs its own upstream fix, so the two go current at different times
+and a rule each lets `inspectHostSupport` say which is which. Neither carries an alias —
+`Canada/Mountain` belongs to Alberta — and neither carries a label, because the territory has
+published no approved short code.
 
 Each rule keeps the instant its offset legally commences separate from its `firstDivergenceInstant`,
 the skipped "fall back" on 2026-11-01 when a legacy host first disagrees with it; see
@@ -223,6 +232,11 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   [permanent-time announcement](https://news.gov.mb.ca/news/?item=75397); that Act is not in force —
   s. 4 commences it on a day fixed by proclamation and none has been made — so its legal
   commencement remains unset
+- Northwest Territories —
+  [the GNWT announcement](https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change)
+  that the regulations establishing Northwest Territories Time came into force on 2026-08-21,
+  ending seasonal clock changes for both `America/Yellowknife` and `America/Inuvik`; the territory
+  has published a long name but no short code, so neither rule bundles a label
 
 ## Limitations
 
@@ -230,7 +244,10 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   passes through to the host.
 - Only the approved English labels are bundled, and only from a rule's first divergence onwards.
   Before it, `toTimeZoneLabel` returns nothing and a caller falls back to the host's own name for
-  the zone (MST/MDT, PST/PDT, CST/CDT). The package derives no label from `Intl` itself.
+  the zone (MST/MDT, PST/PDT, CST/CDT). It returns nothing for an ungoverned zone, and nothing for
+  a governed zone whose jurisdiction has published no approved label — the Northwest Territories
+  zones today — so a caller falls back to the host's own name there too. The package derives no
+  label from `Intl` itself.
 - It formats nothing. Applications format the corrected `instant` in the effective `timeZoneId`.
 - `toCorrectedInstant` trusts the host's own disambiguation before the divergence day, so a host
   whose seasonal data is wrong for earlier years is not corrected.

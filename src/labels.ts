@@ -1,6 +1,7 @@
 /**
- * Approved English labels for each rule, and the lookup that decides when one
- * applies.
+ * Approved English labels for each rule that has one, and the lookup that
+ * decides when one applies. A governed rule whose jurisdiction has published
+ * no approved short code has no entry here, and is unlabelled until one is.
  *
  * Labels cannot alter offset rules, which are owned exclusively
  * by `src/rules.ts`.
@@ -9,24 +10,26 @@ import { findRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
 import type { RuleId, TimeZoneLabel, ToTimeZoneLabelInput } from "./types.js";
 
-export const labels: Readonly<Record<RuleId, TimeZoneLabel>> = Object.freeze({
-  "ab-permanent-time-2026": Object.freeze({
-    long: "Alberta Time",
-    short: "ABT"
-  }),
-  "bc-permanent-time-2026": Object.freeze({
-    long: "Pacific Time",
-    short: "PCT"
-  }),
-  "mb-permanent-time-2026": Object.freeze({
-    long: "Manitoba Standard Time",
-    short: "MBT"
-  })
-});
+export const labels: Readonly<Partial<Record<RuleId, TimeZoneLabel>>> =
+  Object.freeze({
+    "ab-permanent-time-2026": Object.freeze({
+      long: "Alberta Time",
+      short: "ABT"
+    }),
+    "bc-permanent-time-2026": Object.freeze({
+      long: "Pacific Time",
+      short: "PCT"
+    }),
+    "mb-permanent-time-2026": Object.freeze({
+      long: "Manitoba Standard Time",
+      short: "MBT"
+    })
+  });
 
 /**
  * The approved label for a governed zone at an instant, or `undefined` before
- * that rule's first divergence and for any identifier no rule governs.
+ * that rule's first divergence, for a governed zone whose jurisdiction has
+ * published no approved label, and for any identifier no rule governs.
  *
  * No input makes it throw, unlike the correction functions, so it can be
  * called unconditionally while formatting. A caller with no label falls back

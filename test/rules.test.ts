@@ -26,7 +26,9 @@ describe("rules", () => {
   it.each([
     ["America/Edmonton", "-06:00", "Etc/GMT+6"],
     ["America/Vancouver", "-07:00", "Etc/GMT+7"],
-    ["America/Winnipeg", "-05:00", "Etc/GMT+5"]
+    ["America/Winnipeg", "-05:00", "Etc/GMT+5"],
+    ["America/Yellowknife", "-06:00", "Etc/GMT+6"],
+    ["America/Inuvik", "-06:00", "Etc/GMT+6"]
   ])(
     "governs %s with permanent offset %s via %s",
     (canonicalTimeZoneId, offset, fixedTimeZoneId) => {
@@ -47,7 +49,13 @@ describe("rules", () => {
       "2026-03-09T00:00:00-07:00",
       "2026-11-01T02:00:00-07:00"
     ],
-    ["America/Winnipeg", undefined, "2026-11-01T02:00:00-05:00"]
+    ["America/Winnipeg", undefined, "2026-11-01T02:00:00-05:00"],
+    [
+      "America/Yellowknife",
+      "2026-08-21T00:00:00-06:00",
+      "2026-11-01T02:00:00-06:00"
+    ],
+    ["America/Inuvik", "2026-08-21T00:00:00-06:00", "2026-11-01T02:00:00-06:00"]
   ])(
     "records the legal and first-divergent instants for %s",
     (timeZoneId, legalEffectiveInstant, firstDivergenceInstant) => {
@@ -69,7 +77,25 @@ describe("rules", () => {
     }
   );
 
+  it.each(["America/Yellowknife", "America/Inuvik"])(
+    "governs %s under its own rule, claiming no alias",
+    (timeZoneId) => {
+      const rule = findRule(timeZoneId);
+      expect(rule?.jurisdiction).toBe("Northwest Territories");
+      expect(rule?.aliases).toEqual([]);
+      expect(normalizeTimeZoneId(timeZoneId)).toBe(timeZoneId);
+      expect(normalizeTimeZoneId(timeZoneId.toLowerCase())).toBe(timeZoneId);
+    }
+  );
+
+  // Alberta keeps `Canada/Mountain`, and Nunavut is ungoverned even where it
+  // shares the Northwest Territories' offset.
+  it("leaves Canada/Mountain with Alberta", () => {
+    expect(findRule("Canada/Mountain")?.ruleId).toBe("ab-permanent-time-2026");
+  });
+
   it.each([
+    "America/Cambridge_Bay",
     "America/Creston",
     "America/Dawson_Creek",
     "America/Fort_Nelson",

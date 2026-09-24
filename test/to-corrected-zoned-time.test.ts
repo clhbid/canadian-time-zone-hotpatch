@@ -36,7 +36,9 @@ describe("toCorrectedZonedTime", () => {
   it.each([
     ["America/Edmonton", "Etc/GMT+6", "-06:00"],
     ["America/Vancouver", "Etc/GMT+7", "-07:00"],
-    ["America/Winnipeg", "Etc/GMT+5", "-05:00"]
+    ["America/Winnipeg", "Etc/GMT+5", "-05:00"],
+    ["America/Yellowknife", "Etc/GMT+6", "-06:00"],
+    ["America/Inuvik", "Etc/GMT+6", "-06:00"]
   ])("corrects %s to %s once stale", (timeZoneId, fixed, offset) => {
     const result = toCorrectedZonedTime({
       instant: "2026-12-25T12:00:00Z",
@@ -45,6 +47,37 @@ describe("toCorrectedZonedTime", () => {
     expect(result.timeZoneId).toBe(fixed);
     expect(result.offset).toBe(offset);
   });
+
+  it.each([
+    ["America/Yellowknife", "nt-yellowknife-permanent-time-2026"],
+    ["America/Inuvik", "nt-inuvik-permanent-time-2026"]
+  ])("corrects %s under its own rule on a stale host", (timeZoneId, ruleId) => {
+    expect(
+      toCorrectedZonedTime({
+        instant: "2026-11-15T19:00:00Z",
+        timeZoneId
+      })
+    ).toEqual({
+      instant: "2026-11-15T19:00:00Z",
+      timeZoneId: "Etc/GMT+6",
+      offset: "-06:00",
+      support: { status: "stale", timeZoneId, ruleId }
+    });
+  });
+
+  it.each(["America/Yellowknife", "America/Inuvik"])(
+    "passes %s through under its canonical identifier on a current host",
+    (timeZoneId) => {
+      hostState.tzdata = "current";
+      const result = toCorrectedZonedTime({
+        instant: "2026-11-15T19:00:00Z",
+        timeZoneId
+      });
+      expect(result.timeZoneId).toBe(timeZoneId);
+      expect(result.offset).toBe("-06:00");
+      expect(result.support.status).toBe("current");
+    }
+  );
 
   it("normalizes aliases before correcting", () => {
     const result = toCorrectedZonedTime({

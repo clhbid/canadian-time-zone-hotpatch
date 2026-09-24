@@ -44,6 +44,18 @@ describe("package root", () => {
         canonicalTimeZoneId: "America/Winnipeg",
         offset: "-05:00",
         firstDivergenceInstant: "2026-11-01T02:00:00-05:00"
+      },
+      {
+        ruleId: "nt-yellowknife-permanent-time-2026",
+        canonicalTimeZoneId: "America/Yellowknife",
+        offset: "-06:00",
+        firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
+      },
+      {
+        ruleId: "nt-inuvik-permanent-time-2026",
+        canonicalTimeZoneId: "America/Inuvik",
+        offset: "-06:00",
+        firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
       }
     ]);
   });
