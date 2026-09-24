@@ -135,16 +135,8 @@ declare function send(event: { rule_id: string; rule_status: string }): void;
 // timezone data rather than where the visitor happens to be.
 const host = inspectHostSupport();
 for (const { ruleId, status } of host.ruleSupport) {
-  send({ rule_id: ruleId, rule_status: status }); // "current" | "stale"
+  send({ rule_id: ruleId, rule_status: status });
 }
-// On a host that has the B.C. and Manitoba rules but not Alberta's, this
-// sends three events, one per rule:
-// { rule_id: "ab-permanent-time-2026", rule_status: "stale" }
-// { rule_id: "bc-permanent-time-2026", rule_status: "current" }
-// { rule_id: "mb-permanent-time-2026", rule_status: "current" }
-//
-// Each event carries no zone, offset, instant or user agent, and never reads
-// the visitor's own timezone.
 ```
 
 ### Using with Node.js

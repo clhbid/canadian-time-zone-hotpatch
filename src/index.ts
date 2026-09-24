@@ -49,9 +49,7 @@ export type {
 
 /**
  * Asks whether this host's timezone data knows the rules this package
- * patches. `ruleSupport` carries every rule's own status, in rule-table
- * order, so a caller can report telemetry per rule without joining
- * `staleRuleIds` against the exported `rules` table.
+ * patches. `ruleSupport` lists every rule's status in rule-table order.
  * @throws {MissingTemporalError} When no Temporal implementation is available.
  */
 export const inspectHostSupport: Hotpatch["inspectHostSupport"] = () =>
