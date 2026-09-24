@@ -49,6 +49,7 @@
     "pretypecheck": "npm run generate:version",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && vitest run",
+    "pretest:watch": "npm run generate:version",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --check .",
