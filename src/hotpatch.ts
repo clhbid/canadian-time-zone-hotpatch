@@ -58,6 +58,7 @@ export interface Hotpatch {
 
   /**
    * Computes the instant a wall-clock reading denotes.
+   * @throws {MissingTemporalError} When no Temporal implementation is available.
    * @throws {OffsetBearingWallTimeError} When `wallTime` carries a UTC offset or `Z`.
    * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
    * @throws {RangeError} When `wallTime` is malformed, or under `reject`, denotes a repeated or skipped time.
@@ -67,6 +68,7 @@ export interface Hotpatch {
   /**
    * Corrects an instant for display; the instant itself never changes. Guard
    * with `inspectTimeZoneSupport` first when `timeZoneId` is not vetted.
+   * @throws {MissingTemporalError} When no Temporal implementation is available.
    * @throws {UnknownTimeZoneError} When the host does not recognize `timeZoneId`.
    * @throws {RangeError} When `instant` is malformed.
    */

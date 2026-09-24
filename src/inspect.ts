@@ -17,8 +17,9 @@ import { TimeZoneSupportStatus } from "./types.js";
  * answers "does this host know the rule?" without caller bias.
  *
  * Never throws for a malformed or unrecognized zone identifier — that is an
- * `unknown` result. A malformed `instant` is a caller error and throws the
- * `RangeError` Temporal raises for it.
+ * `unknown` result.
+ * @throws {RangeError} When `instant` is supplied and malformed. The public
+ * export takes no `instant`, so nothing a caller passes it can throw.
  */
 export function inspectTimeZoneSupport(
   temporal: TemporalNamespace,
