@@ -10,5 +10,6 @@ export const packageRootExportNames = [
   "rules",
   "toCorrectedInstant",
   "toCorrectedZonedTime",
-  "toTimeZoneLabel"
+  "toTimeZoneLabel",
+  "version"
 ] as const;

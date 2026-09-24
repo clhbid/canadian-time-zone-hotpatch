@@ -126,7 +126,10 @@ const display = toCorrectedZonedTime({
 ### Reporting host support to analytics
 
 ```ts
-import { inspectHostSupport } from "@clhbid/canadian-time-zone-hotpatch";
+import {
+  inspectHostSupport,
+  version
+} from "@clhbid/canadian-time-zone-hotpatch";
 
 // Once per session. No arguments: the package probes every rule it owns, at
 // each rule's own first divergence, so the answer describes this host's
@@ -134,10 +137,15 @@ import { inspectHostSupport } from "@clhbid/canadian-time-zone-hotpatch";
 const host = inspectHostSupport();
 const event = {
   status: host.status, // "current" | "stale"
-  staleRules: host.staleRuleIds.join(",") // "" when nothing is stale
+  staleRules: host.staleRuleIds.join(","), // "" when nothing is stale
+  // Tags the event with the rule set that produced it, so a newly released
+  // rule set can be measured on its own and telemetry dedupes once per
+  // session on the pair. Equal to the version this package published as —
+  // no `package.json` import required.
+  packageVersion: version
 };
 // On a host that has the B.C. and Manitoba rules but not Alberta's:
-// { status: "stale", staleRules: "ab-permanent-time-2026" }
+// { status: "stale", staleRules: "ab-permanent-time-2026", packageVersion: "0.3.0" }
 //
 // Send `event` once per session. It carries no zone, offset, instant or user
 // agent, and never reads the visitor's own timezone.
@@ -239,7 +247,8 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 
 CLHbid owns the rule table in this repository. A rule's `ruleId` is stable for the life of the rule;
 a change to its offset, instants, or aliases ships as a new package version under semantic
-versioning, not as per-rule version metadata. Telemetry keys on `ruleId` and the package version.
+versioning, not as per-rule version metadata. Telemetry keys on `ruleId` and the package version,
+read from the `version` export rather than `package.json`.
 
 The two halves of this package have different lifetimes. The **offset correction** is temporary and
 retires as described below. The **approved label override** does not: host data will never supply

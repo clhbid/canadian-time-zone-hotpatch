@@ -26,6 +26,7 @@ export type { TimeZoneRule } from "./rules.js";
 export { MissingTemporalError } from "./temporal.js";
 export type { TemporalNamespace } from "./temporal.js";
 export { Disambiguation, TimeZoneSupportStatus } from "./types.js";
+export { version } from "./version.js";
 export type {
   CorrectedZonedTime,
   HostSupport,
