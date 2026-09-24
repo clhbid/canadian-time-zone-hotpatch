@@ -227,7 +227,15 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
 ## Limitations
 
 - This is not a timezone database. It corrects only the legislated changes above; every other zone
-  passes through to the host.
+  passes through to the host. Concretely: **for a zone outside the rule table, this package returns
+  exactly what the bare host returns** — the same offset and instant correcting either direction,
+  `inspectTimeZoneSupport` reporting `not_applicable`, and `toTimeZoneLabel` returning nothing. That
+  guarantee is what makes it safe to call this package on an arbitrary identifier, including one
+  read straight from `Intl.DateTimeFormat().resolvedOptions().timeZone`, without checking it against
+  the rule table first. It is pinned by a differential spec
+  ([`test/pass-through.test.ts`](./test/pass-through.test.ts)) that compares this package's output
+  against the host's for every zone the host recognizes outside the rule table, derived from the
+  exported `rules` table so that a new rule removes its zones from the spec automatically.
 - Only the approved English labels are bundled, and only from a rule's first divergence onwards.
   Before it, `toTimeZoneLabel` returns nothing and a caller falls back to the host's own name for
   the zone (MST/MDT, PST/PDT, CST/CDT). The package derives no label from `Intl` itself.
