@@ -6,6 +6,7 @@ describe("package root", () => {
     expect(Object.keys(pkg).sort()).toEqual([
       "MissingTemporalError",
       "OffsetBearingWallTimeError",
+      "TimeZoneSupportStatus",
       "UnknownTimeZoneError",
       "createHotpatch",
       "inspectHostSupport",

@@ -31,6 +31,7 @@ describe("require() from CommonJS", () => {
     expect(Object.keys(load()).sort()).toEqual([
       "MissingTemporalError",
       "OffsetBearingWallTimeError",
+      "TimeZoneSupportStatus",
       "UnknownTimeZoneError",
       "createHotpatch",
       "inspectHostSupport",
