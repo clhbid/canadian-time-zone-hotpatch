@@ -1,21 +1,10 @@
 import { describe, expect, it } from "vitest";
 import * as pkg from "../src/index.js";
+import { packageRootExportNames } from "./package-root-export-names.js";
 
 describe("package root", () => {
   it("exports exactly the trimmed runtime surface", () => {
-    expect(Object.keys(pkg).sort()).toEqual([
-      "Disambiguation",
-      "MissingTemporalError",
-      "OffsetBearingWallTimeError",
-      "TimeZoneSupportStatus",
-      "UnknownTimeZoneError",
-      "createHotpatch",
-      "inspectHostSupport",
-      "rules",
-      "toCorrectedInstant",
-      "toCorrectedZonedTime",
-      "toTimeZoneLabel"
-    ]);
+    expect(Object.keys(pkg).sort()).toEqual(packageRootExportNames);
   });
 
   // Values are already pinned where they are used: every status literal in
