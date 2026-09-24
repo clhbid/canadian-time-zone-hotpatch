@@ -60,33 +60,21 @@ import {
   toTimeZoneLabel
 } from "@clhbid/canadian-time-zone-hotpatch";
 
-// Display a stored instant in the zone you are showing it in — often the
-// viewer's own. Guard first when that identifier is not vetted: it usually
-// arrives from Intl.DateTimeFormat().resolvedOptions().timeZone or from
-// stored data, and toCorrectedZonedTime throws UnknownTimeZoneError for a
-// zone the host does not recognize. No identifier makes inspectTimeZoneSupport
-// throw — only a missing Temporal does, as with every function here — so it
-// is safe to call in a render, and correcting inside the branch it clears
-// keeps the throw off the render path entirely.
+// Guard an unvetted identifier: correcting an unknown zone throws.
 function show(instant: string, timeZoneId: string): string {
   if (
     inspectTimeZoneSupport(timeZoneId).status === TimeZoneSupportStatus.unknown
   ) {
-    // Fall back rather than throwing: no correction is possible for a zone
-    // the host cannot resolve, so show the stored instant as it stands.
+    // No correction is possible, so fall back rather than throw.
     return new Date(instant).toISOString();
   }
 
-  // Format with the zone that comes back, never the one you passed: on a
-  // stale host they differ, and that difference is the correction.
+  // Format with the zone that comes back, never the one you passed.
   const display = toCorrectedZonedTime({ instant, timeZoneId });
   // display.timeZoneId — "Etc/GMT+6" on a stale host, "America/Edmonton" on a current one
   // display.offset     — "-06:00" either way
 
-  // Name the zone separately, passing the same identifier you corrected with.
-  // It returns nothing before that zone's first divergence and for a zone no
-  // rule governs — fall back to the host's own name then. No input makes it
-  // throw, and the host is never consulted.
+  // Undefined before the zone's first divergence, and for an ungoverned zone.
   const label = toTimeZoneLabel({ instant, timeZoneId });
   // label — { long: "Alberta Time", short: "ABT" }
 
@@ -101,9 +89,7 @@ function show(instant: string, timeZoneId: string): string {
 const shown = show("2026-11-15T19:00:00Z", "America/Edmonton");
 // "November 15, 2026 at 1:00 p.m. ABT" — an uncorrected host says 12:00 p.m.
 
-// Parse a wall-clock entry. A wall-clock reading carries no offset of its own.
-// "reject" refuses a reading the zone repeats or skips rather than silently
-// picking one of two moments.
+// A wall time carries no offset; "reject" refuses repeated or skipped ones.
 const entry = toCorrectedInstant({
   wallTime: "2026-12-15T10:00:00",
   timeZoneId: "America/Edmonton",
