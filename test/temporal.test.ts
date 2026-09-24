@@ -207,6 +207,39 @@ describe("a global Temporal implementation", () => {
     expect(toCorrectedZonedTime(edmonton)).toMatchObject(corrected);
   });
 
+  // Each top-level export is a wrapper of its own around the same
+  // implementation an instance calls, so one that dropped or mixed up what it
+  // was passed would otherwise surface only in a consumer.
+  it.each(everyCall)(
+    "answers from the top-level %s what an instance answers",
+    async (_name, call) => {
+      vi.stubGlobal("Temporal", PolyfillTemporal);
+      const pkg = await import("../src/index.js");
+
+      expect(call(pkg)).toEqual(
+        call(createHotpatch({ temporal: PolyfillTemporal }))
+      );
+    }
+  );
+
+  // Asserted against values rather than against an instance: a wrapper that
+  // ignored its argument would agree with one that did the same.
+  it("classifies a governed and an unrecognized zone through the export", async () => {
+    vi.stubGlobal("Temporal", PolyfillTemporal);
+
+    const { inspectTimeZoneSupport } = await import("../src/index.js");
+
+    expect(inspectTimeZoneSupport(edmonton.timeZoneId)).toEqual({
+      status: "stale",
+      timeZoneId: "America/Edmonton",
+      ruleId: "ab-permanent-time-2026"
+    });
+    expect(inspectTimeZoneSupport("Mars/Olympus_Mons")).toEqual({
+      status: "unknown",
+      timeZoneId: "Mars/Olympus_Mons"
+    });
+  });
+
   it("is picked up even when it is installed after the package is imported", async () => {
     vi.stubGlobal("Temporal", undefined);
     const { toCorrectedZonedTime } = await import("../src/index.js");
