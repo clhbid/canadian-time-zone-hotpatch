@@ -13,19 +13,21 @@ export interface TimeZoneLabel {
   readonly short: string;
 }
 
-/**
- * How the running host's own time zone data relates to a rule:
- *
- * - `current` — the host agrees with the rule at the probed instant, or the
- *   rule has not yet diverged from seasonal time there, so no correction is
- *   required.
- * - `stale` — the host reports a legacy seasonal offset where the rule
- *   mandates a permanent one; correction is required.
- * - `not_applicable` — a valid time zone that no rule in this package governs.
- * - `unknown` — the identifier is not a time zone the host recognizes.
- */
+/** Every value a `status` takes. */
+export const TimeZoneSupportStatus = Object.freeze({
+  /** The host agrees with the rule at the probed instant, before or after divergence. */
+  current: "current",
+  /** The host reports a seasonal offset where the rule mandates a permanent one. */
+  stale: "stale",
+  /** A zone this host recognizes and no rule governs. */
+  not_applicable: "not_applicable",
+  /** Not a zone this host recognizes; correcting one throws. */
+  unknown: "unknown"
+} as const);
+
+/** How the running host's own time zone data relates to a rule. */
 export type TimeZoneSupportStatus =
-  "current" | "stale" | "not_applicable" | "unknown";
+  (typeof TimeZoneSupportStatus)[keyof typeof TimeZoneSupportStatus];
 
 /**
  * Support for the zone a correction actually inspected. Governed zones
@@ -54,16 +56,23 @@ export interface HostSupport {
 }
 
 /**
- * Temporal's disambiguation modes for ambiguous or nonexistent wall-clock
- * times; see
+ * Every value a `disambiguation` takes; see
  * https://tc39.es/proposal-temporal/docs/timezone.html#resolving-time-ambiguity-in-temporal.
- *
- * - `compatible` — later at a skipped time, earlier at a repeated time.
- * - `earlier` — the earlier possible instant.
- * - `later` — the later possible instant.
- * - `reject` — throws the `RangeError` Temporal would throw.
  */
-export type Disambiguation = "compatible" | "earlier" | "later" | "reject";
+export const Disambiguation = Object.freeze({
+  /** Later at a skipped time, earlier at a repeated one. */
+  compatible: "compatible",
+  /** The earlier of the two instants. */
+  earlier: "earlier",
+  /** The later of the two instants. */
+  later: "later",
+  /** Throws the `RangeError` Temporal would throw. */
+  reject: "reject"
+} as const);
+
+/** How a wall-clock time the zone repeats or skips resolves to an instant. */
+export type Disambiguation =
+  (typeof Disambiguation)[keyof typeof Disambiguation];
 
 /** Input to `toCorrectedZonedTime`. */
 export interface ToCorrectedZonedTimeInput {
@@ -87,6 +96,14 @@ export interface ToCorrectedInstantInput {
   readonly disambiguation: Disambiguation;
 }
 
+/** Input to `toTimeZoneLabel`. */
+export interface ToTimeZoneLabelInput {
+  /** ISO 8601 instant to label, e.g. `"2026-11-15T12:00:00Z"`. */
+  readonly instant: string;
+  /** IANA time zone identifier, matched case-insensitively; aliases are accepted. */
+  readonly timeZoneId: string;
+}
+
 /** A corrected instant together with the zone that produced it. */
 export interface CorrectedZonedTime {
   /** The corrected instant in ISO 8601 UTC form. */
@@ -99,8 +116,6 @@ export interface CorrectedZonedTime {
   readonly timeZoneId: string;
   /** UTC offset at `instant` in the effective zone, e.g. `"-06:00"`. */
   readonly offset: string;
-  /** Approved label for the governing rule; absent for ungoverned zones. */
-  readonly label?: TimeZoneLabel;
   /**
    * The inspection that chose `timeZoneId`: `stale` exactly when the fixed
    * zone was used. For an instant this is support at that instant; for a

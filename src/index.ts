@@ -12,6 +12,7 @@
 import * as correct from "./correct.js";
 import type { Hotpatch } from "./hotpatch.js";
 import { inspectHostSupport as inspect } from "./inspect.js";
+import { toTimeZoneLabel as label } from "./labels.js";
 import { requireGlobalTemporal } from "./temporal.js";
 
 export { OffsetBearingWallTimeError, UnknownTimeZoneError } from "./correct.js";
@@ -19,16 +20,16 @@ export { createHotpatch } from "./hotpatch.js";
 export type { Hotpatch, HotpatchOptions } from "./hotpatch.js";
 export { MissingTemporalError } from "./temporal.js";
 export type { TemporalNamespace } from "./temporal.js";
+export { Disambiguation, TimeZoneSupportStatus } from "./types.js";
 export type {
   CorrectedZonedTime,
-  Disambiguation,
   HostSupport,
   RuleId,
   TimeZoneLabel,
   TimeZoneSupport,
-  TimeZoneSupportStatus,
   ToCorrectedInstantInput,
-  ToCorrectedZonedTimeInput
+  ToCorrectedZonedTimeInput,
+  ToTimeZoneLabelInput
 } from "./types.js";
 
 /*
@@ -37,7 +38,7 @@ export type {
  * imported still counts, and throws `MissingTemporalError` when there is
  * none. They are written out here rather than destructured from a
  * module-scope `createHotpatch()` so that importing one of them does not pull
- * the other two in with it.
+ * the others in with it.
  */
 
 /** Asks whether this host's timezone data knows the rules this package patches. */
@@ -51,3 +52,7 @@ export const toCorrectedInstant: Hotpatch["toCorrectedInstant"] = (input) =>
 /** Corrects an instant for display; the instant itself never changes. */
 export const toCorrectedZonedTime: Hotpatch["toCorrectedZonedTime"] = (input) =>
   correct.toCorrectedZonedTime(requireGlobalTemporal(), input);
+
+/** The approved label for a governed zone at an instant, or `undefined`. */
+export const toTimeZoneLabel: Hotpatch["toTimeZoneLabel"] = (input) =>
+  label(requireGlobalTemporal(), input);

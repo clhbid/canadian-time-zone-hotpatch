@@ -9,6 +9,7 @@ import { isKnownTimeZoneId, observeOffset } from "./host.js";
 import { findRule, rules } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
 import type { HostSupport, TimeZoneSupport } from "./types.js";
+import { TimeZoneSupportStatus } from "./types.js";
 
 /**
  * Inspects host support for `timeZoneId`, probing at `instant` or, when it is
@@ -28,10 +29,10 @@ export function inspectTimeZoneSupport(
   if (!rule) {
     return Object.freeze({
       status: isKnownTimeZoneId(temporal, timeZoneId)
-        ? "not_applicable"
-        : "unknown",
+        ? TimeZoneSupportStatus.not_applicable
+        : TimeZoneSupportStatus.unknown,
       timeZoneId
-    });
+    } satisfies TimeZoneSupport);
   }
 
   const firstDivergence = temporal.Instant.from(rule.firstDivergenceInstant);
@@ -41,7 +42,10 @@ export function inspectTimeZoneSupport(
   if (observedOffset === undefined) {
     // The package knows the zone but this host does not, so its support
     // cannot be classified.
-    return Object.freeze({ status: "unknown", timeZoneId });
+    return Object.freeze({
+      status: TimeZoneSupportStatus.unknown,
+      timeZoneId
+    } satisfies TimeZoneSupport);
   }
 
   // Before first divergence a seasonal host is still correct by definition,
@@ -52,10 +56,13 @@ export function inspectTimeZoneSupport(
       : rule.offset;
 
   return Object.freeze({
-    status: expectedOffset === observedOffset ? "current" : "stale",
+    status:
+      expectedOffset === observedOffset
+        ? TimeZoneSupportStatus.current
+        : TimeZoneSupportStatus.stale,
     timeZoneId: rule.canonicalTimeZoneId,
     ruleId: rule.ruleId
-  });
+  } satisfies TimeZoneSupport);
 }
 
 /**
@@ -69,11 +76,14 @@ export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
     .filter(
       (rule) =>
         inspectTimeZoneSupport(temporal, rule.canonicalTimeZoneId).status !==
-        "current"
+        TimeZoneSupportStatus.current
     )
     .map((rule) => rule.ruleId);
   return Object.freeze({
-    status: staleRuleIds.length > 0 ? "stale" : "current",
+    status:
+      staleRuleIds.length > 0
+        ? TimeZoneSupportStatus.stale
+        : TimeZoneSupportStatus.current,
     staleRuleIds: Object.freeze(staleRuleIds)
-  });
+  } satisfies HostSupport);
 }

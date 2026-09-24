@@ -29,13 +29,16 @@ describe("require() from CommonJS", () => {
 
   it("exposes the package's runtime surface", () => {
     expect(Object.keys(load()).sort()).toEqual([
+      "Disambiguation",
       "MissingTemporalError",
       "OffsetBearingWallTimeError",
+      "TimeZoneSupportStatus",
       "UnknownTimeZoneError",
       "createHotpatch",
       "inspectHostSupport",
       "toCorrectedInstant",
-      "toCorrectedZonedTime"
+      "toCorrectedZonedTime",
+      "toTimeZoneLabel"
     ]);
   });
 
