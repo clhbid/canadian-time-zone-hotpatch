@@ -64,7 +64,12 @@ afterEach(() => {
 });
 
 describe("a missing Temporal implementation", () => {
-  it.each(["inspectHostSupport", "toCorrectedInstant", "toCorrectedZonedTime"])(
+  it.each([
+    "inspectHostSupport",
+    "toCorrectedInstant",
+    "toCorrectedZonedTime",
+    "toTimeZoneLabel"
+  ])(
     "throws MissingTemporalError from %s with no global and nothing supplied",
     async (name) => {
       vi.stubGlobal("Temporal", undefined);
@@ -214,8 +219,12 @@ describe("a supplied Temporal implementation", () => {
   it("is used in preference to a global one", () => {
     vi.stubGlobal("Temporal", trapNamespace());
 
-    const { inspectHostSupport, toCorrectedInstant, toCorrectedZonedTime } =
-      createHotpatch({ temporal: PolyfillTemporal });
+    const {
+      inspectHostSupport,
+      toCorrectedInstant,
+      toCorrectedZonedTime,
+      toTimeZoneLabel
+    } = createHotpatch({ temporal: PolyfillTemporal });
 
     expect(toCorrectedZonedTime(edmonton)).toMatchObject(corrected);
     expect(
@@ -226,6 +235,13 @@ describe("a supplied Temporal implementation", () => {
       })
     ).toMatchObject({ instant: "2026-11-01T07:30:00Z", offset: "-06:00" });
     expect(inspectHostSupport().status).toBe("stale");
+    // Asserting the label, not merely that nothing threw: this lookup
+    // swallows what it catches, so reaching for the trapped global would
+    // surface as a silent `undefined` rather than as an error.
+    expect(toTimeZoneLabel(edmonton)).toEqual({
+      long: "Alberta Time",
+      short: "ABT"
+    });
   });
 
   it("treats an empty options object like no options at all", () => {

@@ -28,9 +28,9 @@ export const labels: Readonly<Record<RuleId, TimeZoneLabel>> = Object.freeze({
  * The approved label for a governed zone at an instant, or `undefined` before
  * that rule's first divergence and for any identifier no rule governs.
  *
- * Never throws, unlike the correction functions, so it can be called
- * unconditionally while formatting. A caller with no label falls back to the
- * host's own name; the package derives none from `Intl`.
+ * No input makes it throw, unlike the correction functions, so it can be
+ * called unconditionally while formatting. A caller with no label falls back
+ * to the host's own name; the package derives none from `Intl`.
  *
  * The rule table is the sole authority: a label is a fact about a statute, so
  * the host is not consulted and a governed zone is labelled whether or not

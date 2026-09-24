@@ -70,9 +70,9 @@ const display = toCorrectedZonedTime({
 // display.offset     — "-06:00" either way
 
 // Name the zone separately, passing the same identifier you corrected with.
-// It returns nothing before that zone's first divergence, for a zone no rule
-// governs, and for an identifier the host does not know — fall back to the
-// host's own name then. It never throws.
+// It returns nothing before that zone's first divergence and for a zone no
+// rule governs — fall back to the host's own name then. No input makes it
+// throw, and the host is never consulted.
 const label = toTimeZoneLabel({
   instant: "2026-11-15T19:00:00Z",
   timeZoneId: "America/Edmonton"
