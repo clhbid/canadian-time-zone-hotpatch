@@ -76,10 +76,14 @@ describe("toTimeZoneLabel", () => {
     ).toBeUndefined();
   });
 
-  it("bundles Manitoba's statutory long name", () => {
-    expect(labels["mb-permanent-time-2026"]).toEqual({
-      long: "Manitoba Standard Time",
-      short: "MBT"
+  // The boundary matrix above reads its expected label from `labels`, so it
+  // pins when a label applies, not what it says. The table itself is pinned
+  // here, against its published sources.
+  it("bundles the approved label for every rule", () => {
+    expect(labels).toEqual({
+      "ab-permanent-time-2026": { long: "Alberta Time", short: "ABT" },
+      "bc-permanent-time-2026": { long: "Pacific Time", short: "PCT" },
+      "mb-permanent-time-2026": { long: "Manitoba Standard Time", short: "MBT" }
     });
   });
 
