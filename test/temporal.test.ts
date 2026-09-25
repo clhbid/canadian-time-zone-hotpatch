@@ -4,9 +4,14 @@ import { createHotpatch } from "../src/hotpatch.js";
 import type { Hotpatch } from "../src/hotpatch.js";
 import { MissingTemporalError } from "../src/index.js";
 import type { TemporalNamespace } from "../src/temporal.js";
-import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
+import type {
+  HostModule,
+  SimulatedScalarTzdata
+} from "./fixtures/simulated-host.js";
 
-const hostState = vi.hoisted(() => ({ tzdata: "stale" as SimulatedTzdata }));
+const hostState = vi.hoisted(() => ({
+  tzdata: "stale" as SimulatedScalarTzdata
+}));
 
 vi.mock("../src/host.js", async (importOriginal) => {
   const actual = await importOriginal<HostModule>();
@@ -52,6 +57,12 @@ function namespaceCandidate() {
     PlainDate: {
       from: PolyfillTemporal.PlainDate.from,
       compare: PolyfillTemporal.PlainDate.compare
+    },
+    ZonedDateTime: {
+      prototype: {
+        getTimeZoneTransition:
+          PolyfillTemporal.ZonedDateTime.prototype.getTimeZoneTransition
+      }
     }
   };
 }
@@ -187,6 +198,14 @@ describe("a missing Temporal implementation", () => {
           compare: "nope"
         }
       }
+    ],
+    [
+      "missing ZonedDateTime namespace",
+      { ...namespaceCandidate(), ZonedDateTime: undefined }
+    ],
+    [
+      "missing ZonedDateTime.prototype.getTimeZoneTransition",
+      { ...namespaceCandidate(), ZonedDateTime: { prototype: {} } }
     ]
   ])(
     "throws MissingTemporalError from createHotpatch when temporal is %s",
@@ -196,6 +215,14 @@ describe("a missing Temporal implementation", () => {
       ).toThrow(MissingTemporalError);
     }
   );
+
+  it("accepts a minimal namespace that has getTimeZoneTransition", () => {
+    expect(() =>
+      createHotpatch({
+        temporal: namespaceCandidate() as unknown as TemporalNamespace
+      })
+    ).not.toThrow();
+  });
 });
 
 describe("a global Temporal implementation", () => {
@@ -299,7 +326,10 @@ describe("a supplied Temporal implementation", () => {
         disambiguation: "compatible"
       })
     ).toMatchObject({ instant: "2026-11-01T07:30:00Z", offset: "-06:00" });
-    expect(inspectHostSupport().status).toBe("stale");
+    expect(inspectHostSupport().ruleSupport).toContainEqual({
+      ruleId: "ab-permanent-time-2026",
+      status: "stale"
+    });
     // Asserting the label, not merely that nothing threw: this lookup
     // swallows what it catches, so reaching for the trapped global would
     // surface as a silent `undefined` rather than as an error.

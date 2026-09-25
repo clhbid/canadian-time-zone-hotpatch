@@ -41,10 +41,20 @@ function isTemporalNamespace(
     return false;
   }
   const namespace = candidate as Record<string, Record<string, unknown>>;
-  return requiredStatics.every((path) => {
+  const hasRequiredStatics = requiredStatics.every((path) => {
     const [name, member] = path.split(".") as [string, string];
     return typeof namespace[name]?.[member] === "function";
   });
+  if (!hasRequiredStatics) {
+    return false;
+  }
+  // Required for rule_outdated detection: every native Temporal has it, and
+  // it has shipped in temporal-polyfill since 0.3.0 and @js-temporal/polyfill
+  // since 0.5.0. There is no fallback for an implementation without it.
+  const zonedDateTimePrototype = (
+    namespace.ZonedDateTime as { prototype?: Record<string, unknown> }
+  )?.prototype;
+  return typeof zonedDateTimePrototype?.getTimeZoneTransition === "function";
 }
 
 /** Validates `candidate`, throwing `MissingTemporalError` when it is unusable. */

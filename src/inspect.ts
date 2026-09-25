@@ -5,11 +5,40 @@
  * Detection never sniffs user agents, operating systems, ICU, Temporal
  * implementations, or tzdata versions: an observed offset is the only signal.
  */
-import { isKnownTimeZoneId, observeOffset } from "./host.js";
-import { findRule, rules } from "./rules.js";
+import type { HostInstant } from "./host.js";
+import {
+  isKnownTimeZoneId,
+  observeNextTransition,
+  observeOffset
+} from "./host.js";
+import { findRule, rules, type TimeZoneRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
 import type { HostSupport, RuleSupport, TimeZoneSupport } from "./types.js";
 import { TimeZoneSupportStatus } from "./types.js";
+
+/**
+ * A rule's verdict from `firstDivergenceInstant` onwards: `stale` if the host
+ * never reported the rule's offset there, `rule_outdated` if it did and later
+ * reports a further offset transition, else `current`.
+ */
+function ruleVerdict(
+  rule: TimeZoneRule,
+  firstDivergence: HostInstant,
+  offsetAtDivergence: string | undefined
+): Exclude<TimeZoneSupportStatus, "not_applicable" | "unknown"> {
+  if (offsetAtDivergence !== rule.offset) {
+    // The host never reported the rule's offset at first divergence, so it
+    // never adopted the rule: nothing here proves it knows of a revision.
+    return TimeZoneSupportStatus.stale;
+  }
+  const revision = observeNextTransition(
+    rule.canonicalTimeZoneId,
+    firstDivergence
+  );
+  return revision !== undefined
+    ? TimeZoneSupportStatus.rule_outdated
+    : TimeZoneSupportStatus.current;
+}
 
 /**
  * Inspects host support for `timeZoneId`, probing at `instant` or, when it is
@@ -51,16 +80,24 @@ export function inspectTimeZoneSupport(
 
   // Before first divergence a seasonal host is still correct by definition,
   // so whatever it reports is what the rule expects and no correction is due.
-  const expectedOffset =
-    temporal.Instant.compare(probe, firstDivergence) < 0
+  if (temporal.Instant.compare(probe, firstDivergence) < 0) {
+    return Object.freeze({
+      status: TimeZoneSupportStatus.current,
+      timeZoneId: rule.canonicalTimeZoneId,
+      ruleId: rule.ruleId
+    } satisfies TimeZoneSupport);
+  }
+
+  // Both reads happen at first divergence, not at `probe`: the verdict
+  // belongs to the rule, so it applies at every instant from there onward,
+  // including a stale seasonal host's daylight-period instants.
+  const offsetAtDivergence =
+    temporal.Instant.compare(probe, firstDivergence) === 0
       ? observedOffset
-      : rule.offset;
+      : observeOffset(rule.canonicalTimeZoneId, firstDivergence);
 
   return Object.freeze({
-    status:
-      expectedOffset === observedOffset
-        ? TimeZoneSupportStatus.current
-        : TimeZoneSupportStatus.stale,
+    status: ruleVerdict(rule, firstDivergence, offsetAtDivergence),
     timeZoneId: rule.canonicalTimeZoneId,
     ruleId: rule.ruleId
   } satisfies TimeZoneSupport);
@@ -85,11 +122,6 @@ export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
     } satisfies RuleSupport);
   });
   return Object.freeze({
-    status: ruleSupport.every(
-      (entry) => entry.status === TimeZoneSupportStatus.current
-    )
-      ? TimeZoneSupportStatus.current
-      : TimeZoneSupportStatus.stale,
     ruleSupport: Object.freeze(ruleSupport)
   } satisfies HostSupport);
 }

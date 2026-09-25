@@ -35,6 +35,10 @@ instance — and either install it globally with its `/global` entry point or ha
 `createHotpatch`, as [Supplying a Temporal implementation](#supplying-a-temporal-implementation)
 shows.
 
+Detection also requires `Temporal.ZonedDateTime.prototype.getTimeZoneTransition` (every native
+`Temporal` has it; polyfills need at least `temporal-polyfill` 0.3.0 or `@js-temporal/polyfill`
+0.5.0), or `createHotpatch` and the top-level functions throw `MissingTemporalError`.
+
 ### Verifying this package
 
 Releases are published from CI with
@@ -124,6 +128,9 @@ const display = toCorrectedZonedTime({
 ```
 
 ### Reporting host support to analytics
+
+`rule_outdated` means the host adopted a rule and then reported a further offset transition the
+rule table doesn't know about; the package defers to the host and the table needs updating.
 
 ```ts
 import {
@@ -247,9 +254,16 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   the zone (MST/MDT, PST/PDT, CST/CDT), as it does for a governed zone whose jurisdiction has not
   published an approved long/short label pair — the Northwest Territories zones today publish only
   the long name "Northwest Territories Time". The package derives no label from `Intl` itself.
+  `toTimeZoneLabel` follows the rule table regardless of host status, including `rule_outdated`.
 - It formats nothing. Applications format the corrected `instant` in the effective `timeZoneId`.
 - `toCorrectedInstant` trusts the host's own disambiguation before the divergence day, so a host
   whose seasonal data is wrong for earlier years is not corrected.
+- The polyfills above search only a few years past the later of the probed instant and the current
+  time, so a polyfilled host reports a revision further out than that as `current` rather than
+  `rule_outdated`, until the search window reaches it.
+- A rule's verdict applies to every instant from its first divergence onwards, so a never-adopted
+  (`stale`) seasonal host now reports `stale` through its daylight-period instants too, where those
+  previously read `current` because the offset happened to coincide with the rule's.
 
 ## Ownership and removal
 

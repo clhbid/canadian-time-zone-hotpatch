@@ -18,7 +18,7 @@ describe("package root", () => {
     [
       "TimeZoneSupportStatus",
       pkg.TimeZoneSupportStatus,
-      ["current", "not_applicable", "stale", "unknown"]
+      ["current", "not_applicable", "rule_outdated", "stale", "unknown"]
     ]
   ])("%s is frozen and exposes exactly its members", (_, constant, members) => {
     expect(Object.keys(constant).sort()).toEqual(members);
