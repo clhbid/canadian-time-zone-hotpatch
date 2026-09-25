@@ -326,7 +326,10 @@ describe("a supplied Temporal implementation", () => {
         disambiguation: "compatible"
       })
     ).toMatchObject({ instant: "2026-11-01T07:30:00Z", offset: "-06:00" });
-    expect(inspectHostSupport().status).toBe("stale");
+    expect(inspectHostSupport().ruleSupport).toContainEqual({
+      ruleId: "ab-permanent-time-2026",
+      status: "stale"
+    });
     // Asserting the label, not merely that nothing threw: this lookup
     // swallows what it catches, so reaching for the trapped global would
     // surface as a silent `undefined` rather than as an error.

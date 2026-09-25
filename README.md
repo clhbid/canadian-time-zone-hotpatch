@@ -131,8 +131,6 @@ const display = toCorrectedZonedTime({
 
 `rule_outdated` means the host adopted a rule and then reported a further offset transition the
 rule table doesn't know about; the package defers to the host and the table needs updating.
-`HostSupport.status` summarizes with the most urgent verdict, `stale` &gt; `rule_outdated` &gt;
-`current`, so it can hide an outdated rule behind a stale one — alert on `ruleSupport` instead.
 
 ```ts
 import {

@@ -274,7 +274,6 @@ describe("inspectTimeZoneSupport", () => {
 describe("inspectHostSupport", () => {
   it("reports every rule stale on a legacy host, in rule-table order", () => {
     expect(inspectHostSupport()).toEqual({
-      status: "stale",
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "stale" },
         { ruleId: "bc-permanent-time-2026", status: "stale" },
@@ -288,7 +287,6 @@ describe("inspectHostSupport", () => {
   it("reports every rule current on an updated host", () => {
     hostState.tzdata = "current";
     expect(inspectHostSupport()).toEqual({
-      status: "current",
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "current" },
         { ruleId: "bc-permanent-time-2026", status: "current" },
@@ -308,7 +306,6 @@ describe("inspectHostSupport", () => {
       "America/Inuvik": "current"
     };
     expect(inspectHostSupport()).toEqual({
-      status: "stale",
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "stale" },
         { ruleId: "bc-permanent-time-2026", status: "current" },
@@ -328,7 +325,6 @@ describe("inspectHostSupport", () => {
       "America/Inuvik": "current"
     };
     expect(inspectHostSupport()).toEqual({
-      status: "stale",
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "current" },
         { ruleId: "bc-permanent-time-2026", status: "stale" },
@@ -355,7 +351,6 @@ describe("inspectHostSupport", () => {
       "America/Inuvik": "stale"
     };
     expect(inspectHostSupport()).toEqual({
-      status: "stale",
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "current" },
         { ruleId: "bc-permanent-time-2026", status: "current" },
@@ -375,7 +370,6 @@ describe("inspectHostSupport", () => {
       "America/Inuvik": "current"
     };
     expect(inspectHostSupport()).toEqual({
-      status: "rule_outdated",
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "rule_outdated" },
         { ruleId: "bc-permanent-time-2026", status: "current" },
@@ -386,7 +380,7 @@ describe("inspectHostSupport", () => {
     });
   });
 
-  it("reports stale over an outdated rule elsewhere, since correction still applies", () => {
+  it("reports each rule's own status when one is stale and another outdated", () => {
     hostState.tzdata = {
       "America/Edmonton": { revisedAt: "2027-11-07T02:00:00-07:00" },
       "America/Vancouver": "stale",
@@ -394,7 +388,15 @@ describe("inspectHostSupport", () => {
       "America/Yellowknife": "current",
       "America/Inuvik": "current"
     };
-    expect(inspectHostSupport().status).toBe("stale");
+    expect(inspectHostSupport()).toEqual({
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "rule_outdated" },
+        { ruleId: "bc-permanent-time-2026", status: "stale" },
+        { ruleId: "mb-permanent-time-2026", status: "current" },
+        { ruleId: "nt-yellowknife-permanent-time-2026", status: "current" },
+        { ruleId: "nt-inuvik-permanent-time-2026", status: "current" }
+      ]
+    });
   });
 
   it("returns a frozen result with a frozen rule list", () => {

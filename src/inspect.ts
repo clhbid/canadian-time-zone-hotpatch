@@ -121,18 +121,7 @@ export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
           : support.status
     } satisfies RuleSupport);
   });
-  // Precedence documented on `HostSupport.status`.
-  const status = ruleSupport.some(
-    (entry) => entry.status === TimeZoneSupportStatus.stale
-  )
-    ? TimeZoneSupportStatus.stale
-    : ruleSupport.some(
-          (entry) => entry.status === TimeZoneSupportStatus.rule_outdated
-        )
-      ? TimeZoneSupportStatus.rule_outdated
-      : TimeZoneSupportStatus.current;
   return Object.freeze({
-    status,
     ruleSupport: Object.freeze(ruleSupport)
   } satisfies HostSupport);
 }

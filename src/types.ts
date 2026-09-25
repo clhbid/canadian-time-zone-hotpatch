@@ -64,12 +64,6 @@ export interface RuleSupport {
 
 /** Whether the running host's time zone data knows the rules this package patches. */
 export interface HostSupport {
-  /**
-   * The most urgent verdict across every rule: `stale`, then
-   * `rule_outdated`, then `current`. Alert on `ruleSupport` instead — this
-   * can hide a `rule_outdated` rule behind a `stale` one.
-   */
-  readonly status: "current" | "stale" | "rule_outdated";
   /** Every rule's status on this host, in rule-table order. */
   readonly ruleSupport: readonly RuleSupport[];
 }
