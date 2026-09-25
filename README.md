@@ -180,11 +180,13 @@ shipped signatures and behavioural detail.
 
 ## Governed rules
 
-| Jurisdiction     | Canonical zone      | Alias             | Permanent offset | Fixed zone  | Label                        |
-| ---------------- | ------------------- | ----------------- | ---------------- | ----------- | ---------------------------- |
-| Alberta          | `America/Edmonton`  | `Canada/Mountain` | `-06:00`         | `Etc/GMT+6` | Alberta Time (ABT)           |
-| British Columbia | `America/Vancouver` | `Canada/Pacific`  | `-07:00`         | `Etc/GMT+7` | Pacific Time (PCT)           |
-| Manitoba         | `America/Winnipeg`  | `Canada/Central`  | `-05:00`         | `Etc/GMT+5` | Manitoba Standard Time (MBT) |
+| Jurisdiction          | Canonical zone        | Alias             | Permanent offset | Fixed zone  | Label                        |
+| --------------------- | --------------------- | ----------------- | ---------------- | ----------- | ---------------------------- |
+| Alberta               | `America/Edmonton`    | `Canada/Mountain` | `-06:00`         | `Etc/GMT+6` | Alberta Time (ABT)           |
+| British Columbia      | `America/Vancouver`   | `Canada/Pacific`  | `-07:00`         | `Etc/GMT+7` | Pacific Time (PCT)           |
+| Manitoba              | `America/Winnipeg`    | `Canada/Central`  | `-05:00`         | `Etc/GMT+5` | Manitoba Standard Time (MBT) |
+| Northwest Territories | `America/Yellowknife` | —                 | `-06:00`         | `Etc/GMT+6` | —                            |
+| Northwest Territories | `America/Inuvik`      | —                 | `-06:00`         | `Etc/GMT+6` | —                            |
 
 Each rule keeps the instant its offset legally commences separate from its `firstDivergenceInstant`,
 the skipped "fall back" on 2026-11-01 when a legacy host first disagrees with it; see
@@ -227,6 +229,14 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   [permanent-time announcement](https://news.gov.mb.ca/news/?item=75397); that Act is not in force —
   s. 4 commences it on a day fixed by proclamation and none has been made — so its legal
   commencement remains unset
+- Northwest Territories —
+  [Northwest Territories Time Regulations, NWT Reg 090-2026](https://www.canlii.org/en/nt/laws/regu/nwt-reg-090-2026/latest/nwt-reg-090-2026.html),
+  in force on 2026-08-21, which publish the long name "Northwest Territories Time" but no short
+  code, so neither zone is labelled; the
+  [announcement](https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change)
+  explains that the 2026-11-01 seasonal "fall back" is skipped. The two zones take a rule each
+  because `America/Inuvik` needs its own upstream fix and so goes current later than
+  `America/Yellowknife`
 
 ## Limitations
 
@@ -235,7 +245,9 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   [`test/pass-through.test.ts`](./test/pass-through.test.ts).
 - Only the approved English labels are bundled, and only from a rule's first divergence onwards.
   Before it, `toTimeZoneLabel` returns nothing and a caller falls back to the host's own name for
-  the zone (MST/MDT, PST/PDT, CST/CDT). The package derives no label from `Intl` itself.
+  the zone (MST/MDT, PST/PDT, CST/CDT), as it does for a governed zone whose jurisdiction has not
+  published an approved long/short label pair — the Northwest Territories zones today publish only
+  the long name "Northwest Territories Time". The package derives no label from `Intl` itself.
 - It formats nothing. Applications format the corrected `instant` in the effective `timeZoneId`.
 - `toCorrectedInstant` trusts the host's own disambiguation before the divergence day, so a host
   whose seasonal data is wrong for earlier years is not corrected.

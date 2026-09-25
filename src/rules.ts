@@ -93,6 +93,36 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     // - https://web2.gov.mb.ca/laws/statutes/2023/c00423.php?lang=en
     // - https://news.gov.mb.ca/news/?item=75397
     firstDivergenceInstant: "2026-11-01T02:00:00-05:00"
+  }),
+  Object.freeze({
+    ruleId: "nt-yellowknife-permanent-time-2026",
+    canonicalTimeZoneId: "America/Yellowknife",
+    aliases: Object.freeze([]),
+    jurisdiction: "Northwest Territories",
+    offset: "-06:00",
+    fixedTimeZoneId: "Etc/GMT+6",
+    // The Northwest Territories Time Regulations, NWT Reg 090-2026, came into
+    // force on August 21, 2026. They publish the long name "Northwest
+    // Territories Time" but no short code, so this rule bundles no label.
+    // Source:
+    // - https://www.canlii.org/en/nt/laws/regu/nwt-reg-090-2026/latest/nwt-reg-090-2026.html
+    legalEffectiveInstant: "2026-08-21T00:00:00-06:00",
+    firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
+  }),
+  Object.freeze({
+    ruleId: "nt-inuvik-permanent-time-2026",
+    canonicalTimeZoneId: "America/Inuvik",
+    aliases: Object.freeze([]),
+    jurisdiction: "Northwest Territories",
+    offset: "-06:00",
+    fixedTimeZoneId: "Etc/GMT+6",
+    // Same regulations as Yellowknife, under a rule of its own: Inuvik needs
+    // its own upstream tzdata fix, so the two zones go current at different
+    // times and `inspectHostSupport` reports them separately.
+    // Source:
+    // - https://www.canlii.org/en/nt/laws/regu/nwt-reg-090-2026/latest/nwt-reg-090-2026.html
+    legalEffectiveInstant: "2026-08-21T00:00:00-06:00",
+    firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
   })
 ]);
 

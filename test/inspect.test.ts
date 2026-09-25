@@ -44,7 +44,9 @@ describe("inspectTimeZoneSupport", () => {
     it.each([
       ["America/Edmonton", "ab-permanent-time-2026"],
       ["America/Vancouver", "bc-permanent-time-2026"],
-      ["America/Winnipeg", "mb-permanent-time-2026"]
+      ["America/Winnipeg", "mb-permanent-time-2026"],
+      ["America/Yellowknife", "nt-yellowknife-permanent-time-2026"],
+      ["America/Inuvik", "nt-inuvik-permanent-time-2026"]
     ])("governs %s under %s", (timeZoneId, ruleId) => {
       expect(inspectTimeZoneSupport(timeZoneId)).toMatchObject({ ruleId });
     });
@@ -53,6 +55,7 @@ describe("inspectTimeZoneSupport", () => {
       "America/Dawson_Creek",
       "America/Fort_Nelson",
       "America/Creston",
+      "America/Cambridge_Bay",
       "America/Toronto",
       "america/toronto",
       "Etc/GMT+6",
@@ -122,12 +125,33 @@ describe("inspectTimeZoneSupport", () => {
     it.each([
       ["America/Edmonton", "ab-permanent-time-2026"],
       ["America/Vancouver", "bc-permanent-time-2026"],
-      ["America/Winnipeg", "mb-permanent-time-2026"]
+      ["America/Winnipeg", "mb-permanent-time-2026"],
+      ["America/Yellowknife", "nt-yellowknife-permanent-time-2026"],
+      ["America/Inuvik", "nt-inuvik-permanent-time-2026"]
     ])("classifies %s as stale on a legacy host", (timeZoneId, ruleId) => {
       expect(
         inspectTimeZoneSupport(timeZoneId, "2026-12-25T12:00:00Z")
       ).toEqual({ status: "stale", timeZoneId, ruleId });
     });
+
+    it.each([
+      ["America/Yellowknife", "nt-yellowknife-permanent-time-2026"],
+      ["America/Inuvik", "nt-inuvik-permanent-time-2026"]
+    ])("classifies %s as current on an updated host", (timeZoneId, ruleId) => {
+      hostState.tzdata = "current";
+      expect(
+        inspectTimeZoneSupport(timeZoneId, "2026-12-25T12:00:00Z")
+      ).toEqual({ status: "current", timeZoneId, ruleId });
+    });
+
+    it.each(["America/Yellowknife", "America/Inuvik"])(
+      "reports %s current on a seasonal host before its first divergence",
+      (timeZoneId) => {
+        expect(
+          inspectTimeZoneSupport(timeZoneId, "2026-09-01T12:00:00Z").status
+        ).toBe("current");
+      }
+    );
 
     it("switches from current to stale exactly at the first divergence instant", () => {
       const at = (instant: string) =>
@@ -184,7 +208,9 @@ describe("inspectTimeZoneSupport", () => {
     it.each([
       ["America/Edmonton"],
       ["America/Vancouver"],
-      ["America/Winnipeg"]
+      ["America/Winnipeg"],
+      ["America/Yellowknife"],
+      ["America/Inuvik"]
     ])("probes %s at its own first divergence", (timeZoneId) => {
       expect(inspectTimeZoneSupport(timeZoneId)).toMatchObject({
         status: "stale",
@@ -201,7 +227,9 @@ describe("inspectHostSupport", () => {
       staleRuleIds: [
         "ab-permanent-time-2026",
         "bc-permanent-time-2026",
-        "mb-permanent-time-2026"
+        "mb-permanent-time-2026",
+        "nt-yellowknife-permanent-time-2026",
+        "nt-inuvik-permanent-time-2026"
       ]
     });
   });
@@ -218,11 +246,27 @@ describe("inspectHostSupport", () => {
     hostState.tzdata = {
       "America/Edmonton": "stale",
       "America/Vancouver": "current",
-      "America/Winnipeg": "current"
+      "America/Winnipeg": "current",
+      "America/Yellowknife": "current",
+      "America/Inuvik": "current"
     };
     expect(inspectHostSupport()).toEqual({
       status: "stale",
       staleRuleIds: ["ab-permanent-time-2026"]
+    });
+  });
+
+  it("names Inuvik's rule alone on a host current for Edmonton but seasonal for Inuvik", () => {
+    hostState.tzdata = {
+      "America/Edmonton": "current",
+      "America/Vancouver": "current",
+      "America/Winnipeg": "current",
+      "America/Yellowknife": "current",
+      "America/Inuvik": "stale"
+    };
+    expect(inspectHostSupport()).toEqual({
+      status: "stale",
+      staleRuleIds: ["nt-inuvik-permanent-time-2026"]
     });
   });
 
