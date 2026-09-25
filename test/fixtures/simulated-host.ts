@@ -38,11 +38,7 @@ export interface RevisedTzdata {
  */
 export type SimulatedScalarTzdata = "stale" | "current" | "unavailable";
 
-/**
- * Whether the simulated host's tzdata predates (`stale`) or knows (`current`)
- * the rules, lacks the zone entirely (`unavailable`), or adopted the rule and
- * later revised it (`RevisedTzdata`).
- */
+/** `SimulatedScalarTzdata`, or `RevisedTzdata` for a rule the host adopted then revised. */
 export type SimulatedTzdata = SimulatedScalarTzdata | RevisedTzdata;
 
 /** Mutable holder letting a test switch the simulated tzdata per case; a record keys it per zone. */

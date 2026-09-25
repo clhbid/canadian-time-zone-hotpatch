@@ -35,11 +35,11 @@ export function isKnownTimeZoneId(
 }
 
 /**
- * The next instant after `instant` at which the host's own data changes
- * `timeZoneId`'s UTC offset, or `undefined` when it reports none — including
- * when `timeZoneId` is invalid. By spec, `getTimeZoneTransition` reports
- * UTC-offset changes only, and finds one wherever it falls, even a
- * transition tzdata ships years before it takes effect.
+ * Next instant after `instant` at which the host's own data changes
+ * `timeZoneId`'s UTC offset, or `undefined` when it reports none, including
+ * for an invalid zone. By spec, `getTimeZoneTransition` reports only
+ * UTC-offset changes, wherever they fall — even one tzdata ships years
+ * before it takes effect.
  */
 export function observeNextTransition(
   timeZoneId: string,

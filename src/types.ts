@@ -22,9 +22,9 @@ export const TimeZoneSupportStatus = Object.freeze({
   /** The host reports a seasonal offset where the rule mandates a permanent one. */
   stale: "stale",
   /**
-   * The host adopted the rule's offset and has since reported a later offset
-   * transition the rule table does not know about. The package defers to the
-   * host rather than correcting it.
+   * The host adopted the rule's offset, then reported a later offset
+   * transition the rule table doesn't know about. The package defers to the
+   * host.
    */
   rule_outdated: "rule_outdated",
   /** A zone this host recognizes and no rule governs. */
@@ -65,10 +65,9 @@ export interface RuleSupport {
 /** Whether the running host's time zone data knows the rules this package patches. */
 export interface HostSupport {
   /**
-   * The most urgent verdict across every rule, in the order `stale`, then
-   * `rule_outdated`, then `current`: `stale` wins because correction still
-   * applies, so this can hide an outdated rule. Alert on `ruleSupport`
-   * instead of this field to catch `rule_outdated`.
+   * The most urgent verdict across every rule: `stale`, then
+   * `rule_outdated`, then `current`. Alert on `ruleSupport` instead — this
+   * can hide a `rule_outdated` rule behind a `stale` one.
    */
   readonly status: "current" | "stale" | "rule_outdated";
   /** Every rule's status on this host, in rule-table order. */

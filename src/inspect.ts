@@ -17,12 +17,9 @@ import type { HostSupport, RuleSupport, TimeZoneSupport } from "./types.js";
 import { TimeZoneSupportStatus } from "./types.js";
 
 /**
- * A rule's verdict, from `firstDivergenceInstant` onwards: whether the host
- * never adopted the rule's offset (`stale`), adopted it and reports nothing
- * later (`current`), or adopted it and reports a later offset transition the
- * rule table does not know about (`rule_outdated`). The verdict is decided
- * once per rule and applies to every instant from first divergence onwards,
- * including a seasonal host's daylight-period instants.
+ * A rule's verdict from `firstDivergenceInstant` onwards: `stale` if the host
+ * never reported the rule's offset there, `rule_outdated` if it did and later
+ * reports a further offset transition, else `current`.
  */
 function ruleVerdict(
   rule: TimeZoneRule,
@@ -91,9 +88,9 @@ export function inspectTimeZoneSupport(
     } satisfies TimeZoneSupport);
   }
 
-  // The verdict belongs to the rule, not the probed instant: both host reads
-  // it decides on are taken at first divergence, whether or not that is where
-  // `probe` itself falls.
+  // Both reads happen at first divergence, not at `probe`: the verdict
+  // belongs to the rule, so it applies at every instant from there onward,
+  // including a stale seasonal host's daylight-period instants.
   const offsetAtDivergence =
     temporal.Instant.compare(probe, firstDivergence) === 0
       ? observedOffset
@@ -124,10 +121,7 @@ export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
           : support.status
     } satisfies RuleSupport);
   });
-  // `stale` wins over `rule_outdated` because correction still applies to a
-  // stale rule; `rule_outdated` wins over `current` because it still needs
-  // attention. Alert on `ruleSupport`, not this summary, to catch an
-  // outdated rule hidden behind a stale one.
+  // Precedence documented on `HostSupport.status`.
   const status = ruleSupport.some(
     (entry) => entry.status === TimeZoneSupportStatus.stale
   )
