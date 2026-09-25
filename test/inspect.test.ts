@@ -199,11 +199,6 @@ describe("inspectHostSupport", () => {
   it("reports every rule stale on a legacy host, in rule-table order", () => {
     expect(inspectHostSupport()).toEqual({
       status: "stale",
-      staleRuleIds: [
-        "ab-permanent-time-2026",
-        "bc-permanent-time-2026",
-        "mb-permanent-time-2026"
-      ],
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "stale" },
         { ruleId: "bc-permanent-time-2026", status: "stale" },
@@ -212,11 +207,10 @@ describe("inspectHostSupport", () => {
     });
   });
 
-  it("reports current with no stale rules on an updated host", () => {
+  it("reports every rule current on an updated host", () => {
     hostState.tzdata = "current";
     expect(inspectHostSupport()).toEqual({
       status: "current",
-      staleRuleIds: [],
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "current" },
         { ruleId: "bc-permanent-time-2026", status: "current" },
@@ -225,27 +219,20 @@ describe("inspectHostSupport", () => {
     });
   });
 
-  it("lists exactly the stale rules on a host stale in one rule and current in the others", () => {
+  it("reports each rule's own status on a host stale in one rule and current in the others", () => {
     hostState.tzdata = {
       "America/Edmonton": "stale",
       "America/Vancouver": "current",
       "America/Winnipeg": "current"
     };
-    const support = inspectHostSupport();
-    expect(support).toEqual({
+    expect(inspectHostSupport()).toEqual({
       status: "stale",
-      staleRuleIds: ["ab-permanent-time-2026"],
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "stale" },
         { ruleId: "bc-permanent-time-2026", status: "current" },
         { ruleId: "mb-permanent-time-2026", status: "current" }
       ]
     });
-    expect(support.staleRuleIds).toEqual(
-      support.ruleSupport
-        .filter((entry) => entry.status !== "current")
-        .map((entry) => entry.ruleId)
-    );
   });
 
   it("reports a governed zone the host cannot observe as stale", () => {
@@ -256,7 +243,6 @@ describe("inspectHostSupport", () => {
     };
     expect(inspectHostSupport()).toEqual({
       status: "stale",
-      staleRuleIds: ["bc-permanent-time-2026"],
       ruleSupport: [
         { ruleId: "ab-permanent-time-2026", status: "current" },
         { ruleId: "bc-permanent-time-2026", status: "stale" },
@@ -275,7 +261,6 @@ describe("inspectHostSupport", () => {
   it("returns a frozen result with a frozen rule list", () => {
     const support = inspectHostSupport();
     expect(Object.isFrozen(support)).toBe(true);
-    expect(Object.isFrozen(support.staleRuleIds)).toBe(true);
     expect(Object.isFrozen(support.ruleSupport)).toBe(true);
     for (const entry of support.ruleSupport) {
       expect(Object.isFrozen(entry)).toBe(true);

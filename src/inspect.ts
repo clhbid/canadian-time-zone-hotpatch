@@ -84,15 +84,12 @@ export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
           : support.status
     } satisfies RuleSupport);
   });
-  const staleRuleIds = ruleSupport
-    .filter((entry) => entry.status !== TimeZoneSupportStatus.current)
-    .map((entry) => entry.ruleId);
   return Object.freeze({
-    status:
-      staleRuleIds.length > 0
-        ? TimeZoneSupportStatus.stale
-        : TimeZoneSupportStatus.current,
-    staleRuleIds: Object.freeze(staleRuleIds),
+    status: ruleSupport.every(
+      (entry) => entry.status === TimeZoneSupportStatus.current
+    )
+      ? TimeZoneSupportStatus.current
+      : TimeZoneSupportStatus.stale,
     ruleSupport: Object.freeze(ruleSupport)
   } satisfies HostSupport);
 }

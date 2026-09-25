@@ -57,8 +57,6 @@ export interface RuleSupport {
 export interface HostSupport {
   /** `stale` when any governed rule is stale on this host. */
   readonly status: "current" | "stale";
-  /** The rules this host has not caught up with, in rule-table order; empty when `current`. */
-  readonly staleRuleIds: readonly RuleId[];
   /** Every rule's status on this host, in rule-table order. */
   readonly ruleSupport: readonly RuleSupport[];
 }
