@@ -43,7 +43,7 @@ export interface HotpatchOptions {
 export interface Hotpatch {
   /**
    * Asks whether this host's timezone data knows the rules this package
-   * patches.
+   * patches. `ruleSupport` lists every rule's status in rule-table order.
    * @throws {MissingTemporalError} When no Temporal implementation is available.
    */
   inspectHostSupport(): HostSupport;

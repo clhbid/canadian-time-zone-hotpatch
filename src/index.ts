@@ -31,6 +31,7 @@ export type {
   CorrectedZonedTime,
   HostSupport,
   RuleId,
+  RuleSupport,
   TimeZoneLabel,
   TimeZoneSupport,
   ToCorrectedInstantInput,
@@ -49,7 +50,7 @@ export type {
 
 /**
  * Asks whether this host's timezone data knows the rules this package
- * patches.
+ * patches. `ruleSupport` lists every rule's status in rule-table order.
  * @throws {MissingTemporalError} When no Temporal implementation is available.
  */
 export const inspectHostSupport: Hotpatch["inspectHostSupport"] = () =>

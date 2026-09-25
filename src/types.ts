@@ -49,12 +49,18 @@ export type TimeZoneSupport =
       readonly timeZoneId: string;
     };
 
+/** A single rule's status on this host. */
+export interface RuleSupport {
+  readonly ruleId: RuleId;
+  readonly status: Exclude<TimeZoneSupportStatus, "not_applicable" | "unknown">;
+}
+
 /** Whether the running host's time zone data knows the rules this package patches. */
 export interface HostSupport {
   /** `stale` when any governed rule is stale on this host. */
   readonly status: "current" | "stale";
-  /** The rules this host has not caught up with, in rule-table order; empty when `current`. */
-  readonly staleRuleIds: readonly RuleId[];
+  /** Every rule's status on this host, in rule-table order. */
+  readonly ruleSupport: readonly RuleSupport[];
 }
 
 /**

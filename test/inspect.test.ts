@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { inspectTimeZoneSupport as inspect } from "../src/inspect.js";
+import { rules } from "../src/rules.js";
 import type {
   HostModule,
   SimulatedHostState,
@@ -224,25 +225,31 @@ describe("inspectHostSupport", () => {
   it("reports every rule stale on a legacy host, in rule-table order", () => {
     expect(inspectHostSupport()).toEqual({
       status: "stale",
-      staleRuleIds: [
-        "ab-permanent-time-2026",
-        "bc-permanent-time-2026",
-        "mb-permanent-time-2026",
-        "nt-yellowknife-permanent-time-2026",
-        "nt-inuvik-permanent-time-2026"
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "stale" },
+        { ruleId: "bc-permanent-time-2026", status: "stale" },
+        { ruleId: "mb-permanent-time-2026", status: "stale" },
+        { ruleId: "nt-yellowknife-permanent-time-2026", status: "stale" },
+        { ruleId: "nt-inuvik-permanent-time-2026", status: "stale" }
       ]
     });
   });
 
-  it("reports current with no stale rules on an updated host", () => {
+  it("reports every rule current on an updated host", () => {
     hostState.tzdata = "current";
     expect(inspectHostSupport()).toEqual({
       status: "current",
-      staleRuleIds: []
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "current" },
+        { ruleId: "bc-permanent-time-2026", status: "current" },
+        { ruleId: "mb-permanent-time-2026", status: "current" },
+        { ruleId: "nt-yellowknife-permanent-time-2026", status: "current" },
+        { ruleId: "nt-inuvik-permanent-time-2026", status: "current" }
+      ]
     });
   });
 
-  it("lists exactly the stale rules on a host stale in one rule and current in the others", () => {
+  it("reports each rule's own status on a host stale in one rule and current in the others", () => {
     hostState.tzdata = {
       "America/Edmonton": "stale",
       "America/Vancouver": "current",
@@ -252,11 +259,44 @@ describe("inspectHostSupport", () => {
     };
     expect(inspectHostSupport()).toEqual({
       status: "stale",
-      staleRuleIds: ["ab-permanent-time-2026"]
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "stale" },
+        { ruleId: "bc-permanent-time-2026", status: "current" },
+        { ruleId: "mb-permanent-time-2026", status: "current" },
+        { ruleId: "nt-yellowknife-permanent-time-2026", status: "current" },
+        { ruleId: "nt-inuvik-permanent-time-2026", status: "current" }
+      ]
     });
   });
 
-  it("names Inuvik's rule alone on a host current for Edmonton but seasonal for Inuvik", () => {
+  it("reports a governed zone the host cannot observe as stale", () => {
+    hostState.tzdata = {
+      "America/Edmonton": "current",
+      "America/Vancouver": "unavailable",
+      "America/Winnipeg": "current",
+      "America/Yellowknife": "current",
+      "America/Inuvik": "current"
+    };
+    expect(inspectHostSupport()).toEqual({
+      status: "stale",
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "current" },
+        { ruleId: "bc-permanent-time-2026", status: "stale" },
+        { ruleId: "mb-permanent-time-2026", status: "current" },
+        { ruleId: "nt-yellowknife-permanent-time-2026", status: "current" },
+        { ruleId: "nt-inuvik-permanent-time-2026", status: "current" }
+      ]
+    });
+  });
+
+  it("has one ruleSupport entry per exported rule, in the same order", () => {
+    const support = inspectHostSupport();
+    expect(support.ruleSupport.map((entry) => entry.ruleId)).toEqual(
+      rules.map((rule) => rule.ruleId)
+    );
+  });
+
+  it("reports Inuvik's rule alone as stale on a host current for the others", () => {
     hostState.tzdata = {
       "America/Edmonton": "current",
       "America/Vancouver": "current",
@@ -266,13 +306,22 @@ describe("inspectHostSupport", () => {
     };
     expect(inspectHostSupport()).toEqual({
       status: "stale",
-      staleRuleIds: ["nt-inuvik-permanent-time-2026"]
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "current" },
+        { ruleId: "bc-permanent-time-2026", status: "current" },
+        { ruleId: "mb-permanent-time-2026", status: "current" },
+        { ruleId: "nt-yellowknife-permanent-time-2026", status: "current" },
+        { ruleId: "nt-inuvik-permanent-time-2026", status: "stale" }
+      ]
     });
   });
 
   it("returns a frozen result with a frozen rule list", () => {
     const support = inspectHostSupport();
     expect(Object.isFrozen(support)).toBe(true);
-    expect(Object.isFrozen(support.staleRuleIds)).toBe(true);
+    expect(Object.isFrozen(support.ruleSupport)).toBe(true);
+    for (const entry of support.ruleSupport) {
+      expect(Object.isFrozen(entry)).toBe(true);
+    }
   });
 });

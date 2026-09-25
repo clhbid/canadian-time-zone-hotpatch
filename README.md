@@ -131,20 +131,19 @@ import {
   version
 } from "@clhbid/canadian-time-zone-hotpatch";
 
+declare function send(event: {
+  rule_id: string;
+  rule_status: string;
+  package_version: string;
+}): void;
+
 // Once per session. No arguments: the package probes every rule it owns, at
 // each rule's own first divergence, so the answer describes this host's
 // timezone data rather than where the visitor happens to be.
 const host = inspectHostSupport();
-const event = {
-  status: host.status, // "current" | "stale"
-  staleRules: host.staleRuleIds.join(","), // "" when nothing is stale
-  packageVersion: version // tags the rule set this event was measured against
-};
-// On a host that has the B.C. and Manitoba rules but not Alberta's:
-// { status: "stale", staleRules: "ab-permanent-time-2026", packageVersion: "0.3.0" }
-//
-// Send `event` once per session. It carries no zone, offset, instant or user
-// agent, and never reads the visitor's own timezone.
+for (const { ruleId, status } of host.ruleSupport) {
+  send({ rule_id: ruleId, rule_status: status, package_version: version });
+}
 ```
 
 ### Using with Node.js

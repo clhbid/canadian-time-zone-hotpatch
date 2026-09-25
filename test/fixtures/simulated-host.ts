@@ -21,8 +21,11 @@ import type { Disambiguation } from "../../src/types.js";
 
 export type HostModule = typeof hostModule;
 
-/** Whether the simulated host's tzdata predates (`stale`) or knows (`current`) the rules. */
-export type SimulatedTzdata = "stale" | "current";
+/**
+ * Whether the simulated host's tzdata predates (`stale`) or knows (`current`)
+ * the rules, or lacks the zone entirely (`unavailable`).
+ */
+export type SimulatedTzdata = "stale" | "current" | "unavailable";
 
 /** Mutable holder letting a test switch the simulated tzdata per case; a record keys it per zone. */
 export interface SimulatedHostState {
@@ -37,6 +40,14 @@ function tzdataFor(
   return typeof state.tzdata === "string"
     ? state.tzdata
     : (state.tzdata[timeZoneId] ?? "stale");
+}
+
+/** Whether `state` simulates a host with no data for the governed zone `timeZoneId`. */
+function isUnavailable(state: SimulatedHostState, timeZoneId: string): boolean {
+  return (
+    timeZoneId in seasonalZones &&
+    tzdataFor(state, timeZoneId) === "unavailable"
+  );
 }
 
 interface SeasonalZone {
@@ -184,6 +195,7 @@ export function simulateHostInstant(
 /**
  * Builds a replacement for `src/host.ts` whose observations for governed
  * zones come from `state.tzdata`, and from the real host for everything else.
+ * An `unavailable` governed zone observes nothing, like a host without it.
  */
 export function simulatedHostModule(
   actual: HostModule,
@@ -192,12 +204,18 @@ export function simulatedHostModule(
   return {
     ...actual,
     isKnownTimeZoneId(temporal, timeZoneId) {
+      if (isUnavailable(state, timeZoneId)) {
+        return false;
+      }
       return (
         timeZoneId in seasonalZones ||
         actual.isKnownTimeZoneId(temporal, timeZoneId)
       );
     },
     observeOffset(timeZoneId, instant) {
+      if (isUnavailable(state, timeZoneId)) {
+        return undefined;
+      }
       return (
         simulateHostOffset(
           tzdataFor(state, timeZoneId),
@@ -207,6 +225,9 @@ export function simulatedHostModule(
       );
     },
     observeInstant(timeZoneId, local, disambiguation) {
+      if (isUnavailable(state, timeZoneId)) {
+        throw new RangeError(`Unknown time zone: ${timeZoneId}`);
+      }
       return (
         simulateHostInstant(
           tzdataFor(state, timeZoneId),
