@@ -2,12 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UnknownTimeZoneError } from "../src/index.js";
 import { inspectTimeZoneSupport } from "../src/inspect.js";
 import { rules } from "../src/rules.js";
-import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
+import type {
+  HostModule,
+  SimulatedHostState,
+  SimulatedScalarTzdata
+} from "./fixtures/simulated-host.js";
 import { hotpatch, temporal } from "./fixtures/temporal.js";
 
 const { toCorrectedZonedTime } = hotpatch;
 
-const hostState = vi.hoisted(() => ({ tzdata: "stale" as SimulatedTzdata }));
+const hostState = vi.hoisted<SimulatedHostState>(() => ({ tzdata: "stale" }));
 
 vi.mock("../src/host.js", async (importOriginal) => {
   const actual = await importOriginal<HostModule>();
@@ -79,6 +83,34 @@ describe("toCorrectedZonedTime", () => {
     }
   );
 
+  describe("a host that adopted the rule and later revised it", () => {
+    const revisedAt = "2027-11-07T02:00:00-07:00";
+
+    beforeEach(() => {
+      hostState.tzdata = { "America/Edmonton": { revisedAt } };
+    });
+
+    it.each([
+      ["before the revision", "2027-06-01T12:00:00Z", "-06:00"],
+      ["after the revision", "2028-01-15T12:00:00Z", "-07:00"]
+    ])(
+      "defers to the host %s, under its canonical identifier",
+      (_label, instant, offset) => {
+        const result = toCorrectedZonedTime({
+          instant,
+          timeZoneId: "America/Edmonton"
+        });
+        expect(result.timeZoneId).toBe("America/Edmonton");
+        expect(result.offset).toBe(offset);
+        expect(result.support).toEqual({
+          status: "rule_outdated",
+          timeZoneId: "America/Edmonton",
+          ruleId: "ab-permanent-time-2026"
+        });
+      }
+    );
+  });
+
   it("normalizes aliases before correcting", () => {
     const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
@@ -128,7 +160,7 @@ describe("toCorrectedZonedTime", () => {
     ).toThrow(RangeError);
   });
 
-  describe.each<SimulatedTzdata>(["stale", "current"])(
+  describe.each<SimulatedScalarTzdata>(["stale", "current"])(
     "on a %s host",
     (tzdata) => {
       beforeEach(() => {

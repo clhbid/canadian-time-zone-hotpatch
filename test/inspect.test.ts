@@ -4,7 +4,7 @@ import { rules } from "../src/rules.js";
 import type {
   HostModule,
   SimulatedHostState,
-  SimulatedTzdata
+  SimulatedScalarTzdata
 } from "./fixtures/simulated-host.js";
 import { hotpatch, temporal } from "./fixtures/temporal.js";
 
@@ -162,9 +162,10 @@ describe("inspectTimeZoneSupport", () => {
       expect(at("2026-11-01T08:00:01Z")).toBe("stale");
     });
 
-    it("stays stale on a legacy host through the following summer, when the seasons coincide", () => {
-      // A legacy host falls back and springs forward again; the rule keeps
-      // the permanent offset throughout, so both agree next summer.
+    it("stays stale on a legacy host through the following summer, even where the offsets coincide", () => {
+      // The verdict belongs to the rule from first divergence onwards: a
+      // legacy host is stale year-round, even in its daylight period when
+      // its offset happens to match the rule's.
       expect(
         inspectTimeZoneSupport("America/Edmonton", "2027-01-15T12:00:00Z")
           .status
@@ -172,7 +173,7 @@ describe("inspectTimeZoneSupport", () => {
       expect(
         inspectTimeZoneSupport("America/Edmonton", "2027-07-15T12:00:00Z")
           .status
-      ).toBe("current");
+      ).toBe("stale");
     });
 
     it("returns a frozen result", () => {
@@ -192,7 +193,7 @@ describe("inspectTimeZoneSupport", () => {
   });
 
   describe("rule-owned probe", () => {
-    it.each<SimulatedTzdata>(["stale", "current"])(
+    it.each<SimulatedScalarTzdata>(["stale", "current"])(
       "matches an explicit probe at first divergence on a %s host",
       (tzdata) => {
         hostState.tzdata = tzdata;
@@ -217,6 +218,55 @@ describe("inspectTimeZoneSupport", () => {
         status: "stale",
         timeZoneId
       });
+    });
+  });
+
+  describe("a host that adopted the rule and later revised it", () => {
+    // A revision that happened before this test was written, well within
+    // reach.
+    const revisedAt = "2027-11-07T02:00:00-07:00";
+
+    beforeEach(() => {
+      hostState.tzdata = { "America/Edmonton": { revisedAt } };
+    });
+
+    it("reports rule_outdated at first divergence", () => {
+      expect(inspectTimeZoneSupport("America/Edmonton")).toEqual({
+        status: "rule_outdated",
+        timeZoneId: "America/Edmonton",
+        ruleId: "ab-permanent-time-2026"
+      });
+    });
+
+    it("reports rule_outdated before the revision takes effect", () => {
+      expect(
+        inspectTimeZoneSupport("America/Edmonton", "2027-06-01T12:00:00Z")
+          .status
+      ).toBe("rule_outdated");
+    });
+
+    it("reports rule_outdated after the revision takes effect", () => {
+      expect(
+        inspectTimeZoneSupport("America/Edmonton", "2028-01-15T12:00:00Z")
+          .status
+      ).toBe("rule_outdated");
+    });
+
+    it("keeps reporting rule_outdated when the revision lies beyond every instant read", () => {
+      hostState.tzdata = {
+        "America/Edmonton": { revisedAt: "2099-01-01T00:00:00Z" }
+      };
+      expect(
+        inspectTimeZoneSupport("America/Edmonton", "2026-12-25T12:00:00Z")
+          .status
+      ).toBe("rule_outdated");
+    });
+
+    it("reports current before first divergence, unaffected by a later revision", () => {
+      expect(
+        inspectTimeZoneSupport("America/Edmonton", "2026-06-01T00:00:00Z")
+          .status
+      ).toBe("current");
     });
   });
 });
@@ -314,6 +364,37 @@ describe("inspectHostSupport", () => {
         { ruleId: "nt-inuvik-permanent-time-2026", status: "stale" }
       ]
     });
+  });
+
+  it("reports an outdated rule alongside the others in ruleSupport", () => {
+    hostState.tzdata = {
+      "America/Edmonton": { revisedAt: "2027-11-07T02:00:00-07:00" },
+      "America/Vancouver": "current",
+      "America/Winnipeg": "current",
+      "America/Yellowknife": "current",
+      "America/Inuvik": "current"
+    };
+    expect(inspectHostSupport()).toEqual({
+      status: "rule_outdated",
+      ruleSupport: [
+        { ruleId: "ab-permanent-time-2026", status: "rule_outdated" },
+        { ruleId: "bc-permanent-time-2026", status: "current" },
+        { ruleId: "mb-permanent-time-2026", status: "current" },
+        { ruleId: "nt-yellowknife-permanent-time-2026", status: "current" },
+        { ruleId: "nt-inuvik-permanent-time-2026", status: "current" }
+      ]
+    });
+  });
+
+  it("reports stale over an outdated rule elsewhere, since correction still applies", () => {
+    hostState.tzdata = {
+      "America/Edmonton": { revisedAt: "2027-11-07T02:00:00-07:00" },
+      "America/Vancouver": "stale",
+      "America/Winnipeg": "current",
+      "America/Yellowknife": "current",
+      "America/Inuvik": "current"
+    };
+    expect(inspectHostSupport().status).toBe("stale");
   });
 
   it("returns a frozen result with a frozen rule list", () => {

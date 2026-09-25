@@ -15,6 +15,7 @@
  *       simulatedHostModule(await importOriginal(), hostState)
  *     );
  */
+import { Temporal } from "temporal-polyfill";
 import type { HostInstant, HostPlainDateTime } from "../../src/host.js";
 import type * as hostModule from "../../src/host.js";
 import type { Disambiguation } from "../../src/types.js";
@@ -22,14 +23,31 @@ import type { Disambiguation } from "../../src/types.js";
 export type HostModule = typeof hostModule;
 
 /**
+ * A host that adopted the rule at first divergence and reports a later
+ * offset transition at `revisedAt` — a return to seasonal time, modeled from
+ * the same offsets `simulateHostOffset` computes for `stale`, so the offset
+ * and transition reads always agree.
+ */
+export interface RevisedTzdata {
+  readonly revisedAt: string;
+}
+
+/**
  * Whether the simulated host's tzdata predates (`stale`) or knows (`current`)
  * the rules, or lacks the zone entirely (`unavailable`).
  */
-export type SimulatedTzdata = "stale" | "current" | "unavailable";
+export type SimulatedScalarTzdata = "stale" | "current" | "unavailable";
+
+/**
+ * Whether the simulated host's tzdata predates (`stale`) or knows (`current`)
+ * the rules, lacks the zone entirely (`unavailable`), or adopted the rule and
+ * later revised it (`RevisedTzdata`).
+ */
+export type SimulatedTzdata = SimulatedScalarTzdata | RevisedTzdata;
 
 /** Mutable holder letting a test switch the simulated tzdata per case; a record keys it per zone. */
 export interface SimulatedHostState {
-  tzdata: SimulatedTzdata | Readonly<Record<string, SimulatedTzdata>>;
+  tzdata: SimulatedScalarTzdata | Readonly<Record<string, SimulatedTzdata>>;
 }
 
 /** Tzdata `state` simulates for `timeZoneId`; zones a record omits are stale. */
@@ -127,6 +145,15 @@ export function simulateHostOffset(
     return undefined;
   }
 
+  if (typeof tzdata === "object") {
+    // Adopted the rule's permanent offset until the revision, then back to
+    // the seasonal cycle a `stale` host never left.
+    const revisedAt = Date.parse(tzdata.revisedAt);
+    return epochMilliseconds < revisedAt
+      ? zone.daylight
+      : simulateHostOffset("stale", timeZoneId, epochMilliseconds);
+  }
+
   const permanentFrom = transitionAt(
     zone.permanentFromYear,
     10,
@@ -145,6 +172,55 @@ export function simulateHostOffset(
   return epochMilliseconds >= daylightStart && epochMilliseconds < daylightEnd
     ? zone.daylight
     : zone.standard;
+}
+
+/**
+ * Epoch milliseconds of the next instant after `afterMilliseconds` at which
+ * `simulateHostOffset` changes for `timeZoneId` under `tzdata`, or
+ * `undefined` when it never does. Derived from the same offsets
+ * `simulateHostOffset` computes, so the two always agree.
+ */
+export function simulateNextTransition(
+  tzdata: SimulatedTzdata,
+  timeZoneId: string,
+  afterMilliseconds: number
+): number | undefined {
+  const zone = seasonalZones[timeZoneId];
+  if (!zone) {
+    return undefined;
+  }
+
+  if (typeof tzdata === "object") {
+    const revisedAt = Date.parse(tzdata.revisedAt);
+    return afterMilliseconds < revisedAt
+      ? revisedAt
+      : simulateNextTransition("stale", timeZoneId, afterMilliseconds);
+  }
+
+  const permanentFrom = transitionAt(
+    zone.permanentFromYear,
+    10,
+    1,
+    zone.daylight
+  );
+  if (tzdata === "current" && afterMilliseconds >= permanentFrom) {
+    return undefined;
+  }
+
+  // The next spring-forward or fall-back after `afterMilliseconds`, checking
+  // this year and next in case the last one for this year has passed.
+  const startYear = new Date(afterMilliseconds).getUTCFullYear();
+  for (const year of [startYear, startYear + 1]) {
+    for (const candidate of [
+      transitionAt(year, 2, 2, zone.standard),
+      transitionAt(year, 10, 1, zone.daylight)
+    ]) {
+      if (candidate > afterMilliseconds) {
+        return candidate;
+      }
+    }
+  }
+  return undefined;
 }
 
 const day = 86_400_000;
@@ -236,6 +312,22 @@ export function simulatedHostModule(
           disambiguation
         ) ?? actual.observeInstant(timeZoneId, local, disambiguation)
       );
+    },
+    observeNextTransition(timeZoneId, instant) {
+      if (isUnavailable(state, timeZoneId)) {
+        return undefined;
+      }
+      if (!(timeZoneId in seasonalZones)) {
+        return actual.observeNextTransition(timeZoneId, instant);
+      }
+      const next = simulateNextTransition(
+        tzdataFor(state, timeZoneId),
+        timeZoneId,
+        instant.epochMilliseconds
+      );
+      return next === undefined
+        ? undefined
+        : Temporal.Instant.fromEpochMilliseconds(next);
     }
   };
 }

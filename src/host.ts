@@ -35,6 +35,27 @@ export function isKnownTimeZoneId(
 }
 
 /**
+ * The next instant after `instant` at which the host's own data changes
+ * `timeZoneId`'s UTC offset, or `undefined` when it reports none — including
+ * when `timeZoneId` is invalid. By spec, `getTimeZoneTransition` reports
+ * UTC-offset changes only, and finds one wherever it falls, even a
+ * transition tzdata ships years before it takes effect.
+ */
+export function observeNextTransition(
+  timeZoneId: string,
+  instant: HostInstant
+): HostInstant | undefined {
+  try {
+    const next = instant
+      .toZonedDateTimeISO(timeZoneId)
+      .getTimeZoneTransition("next");
+    return next?.toInstant();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Instant the host assigns to the wall-clock time `local` in `timeZoneId`.
  * Throws Temporal's `RangeError` for an unrecognized zone, and under
  * `disambiguation: "reject"` when the host repeats or skips `local`.

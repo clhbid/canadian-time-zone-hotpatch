@@ -4,12 +4,15 @@ import {
   UnknownTimeZoneError
 } from "../src/index.js";
 import type { Disambiguation } from "../src/types.js";
-import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
+import type {
+  HostModule,
+  SimulatedHostState
+} from "./fixtures/simulated-host.js";
 import { hotpatch } from "./fixtures/temporal.js";
 
 const { toCorrectedInstant, toTimeZoneLabel } = hotpatch;
 
-const hostState = vi.hoisted(() => ({ tzdata: "stale" as SimulatedTzdata }));
+const hostState = vi.hoisted<SimulatedHostState>(() => ({ tzdata: "stale" }));
 
 vi.mock("../src/host.js", async (importOriginal) => {
   const actual = await importOriginal<HostModule>();
@@ -161,6 +164,52 @@ describe("toCorrectedInstant", () => {
       });
     }
   );
+
+  describe("a host that adopted the rule and later revised it", () => {
+    const revisedAt = "2027-11-07T02:00:00-07:00";
+
+    beforeEach(() => {
+      hostState.tzdata = { "America/Edmonton": { revisedAt } };
+    });
+
+    it("defers to the host's own permanent offset before the revision", () => {
+      expect(
+        toCorrectedInstant({
+          wallTime: "2027-06-01T10:00:00",
+          timeZoneId: "America/Edmonton",
+          disambiguation: "reject"
+        })
+      ).toEqual({
+        instant: "2027-06-01T16:00:00Z",
+        timeZoneId: "America/Edmonton",
+        offset: "-06:00",
+        support: {
+          status: "rule_outdated",
+          timeZoneId: "America/Edmonton",
+          ruleId: "ab-permanent-time-2026"
+        }
+      });
+    });
+
+    it("defers to the host's seasonal offset after the revision", () => {
+      expect(
+        toCorrectedInstant({
+          wallTime: "2027-12-25T10:00:00",
+          timeZoneId: "America/Edmonton",
+          disambiguation: "reject"
+        })
+      ).toEqual({
+        instant: "2027-12-25T17:00:00Z",
+        timeZoneId: "America/Edmonton",
+        offset: "-07:00",
+        support: {
+          status: "rule_outdated",
+          timeZoneId: "America/Edmonton",
+          ruleId: "ab-permanent-time-2026"
+        }
+      });
+    });
+  });
 
   it("normalizes aliases", () => {
     const result = toCorrectedInstant({

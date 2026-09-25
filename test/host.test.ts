@@ -1,6 +1,10 @@
 import { Temporal } from "temporal-polyfill";
 import { describe, expect, it } from "vitest";
-import { observeInstant, observeOffset } from "../src/host.js";
+import {
+  observeInstant,
+  observeNextTransition,
+  observeOffset
+} from "../src/host.js";
 
 describe("host helpers", () => {
   it("observes the host offset for a recognized time zone", () => {
@@ -36,5 +40,24 @@ describe("host helpers", () => {
     expect(() => observeInstant("Not/AZone", local, "compatible")).toThrow(
       RangeError
     );
+  });
+
+  it("finds the next offset transition for a seasonal zone", () => {
+    // Toronto's next transition after this instant is the spring-forward,
+    // whatever tzdata the runner has installed.
+    const instant = Temporal.Instant.from("2026-01-15T12:00:00Z");
+    const next = observeNextTransition("America/Toronto", instant);
+    expect(next).toBeDefined();
+    expect(Temporal.Instant.compare(next!, instant)).toBeGreaterThan(0);
+  });
+
+  it("reports no next transition for a fixed-offset zone", () => {
+    const instant = Temporal.Instant.from("2026-11-01T08:00:00Z");
+    expect(observeNextTransition("Etc/GMT+6", instant)).toBeUndefined();
+  });
+
+  it("returns undefined when the transition read receives an invalid time zone", () => {
+    const instant = Temporal.Instant.from("2026-11-01T08:00:00Z");
+    expect(observeNextTransition("Not/AZone", instant)).toBeUndefined();
   });
 });

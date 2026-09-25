@@ -21,6 +21,12 @@ export const TimeZoneSupportStatus = Object.freeze({
   current: "current",
   /** The host reports a seasonal offset where the rule mandates a permanent one. */
   stale: "stale",
+  /**
+   * The host adopted the rule's offset and has since reported a later offset
+   * transition the rule table does not know about. The package defers to the
+   * host rather than correcting it.
+   */
+  rule_outdated: "rule_outdated",
   /** A zone this host recognizes and no rule governs. */
   not_applicable: "not_applicable",
   /** Not a zone this host recognizes; correcting one throws. */
@@ -33,12 +39,13 @@ export type TimeZoneSupportStatus =
 
 /**
  * Support for the zone a correction actually inspected. Governed zones
- * (`current` and `stale`) carry the canonical identifier and the rule that
- * classified them; ungoverned zones carry only the identifier as given.
+ * (`current`, `stale`, and `rule_outdated`) carry the canonical identifier
+ * and the rule that classified them; ungoverned zones carry only the
+ * identifier as given.
  */
 export type TimeZoneSupport =
   | {
-      readonly status: "current" | "stale";
+      readonly status: "current" | "stale" | "rule_outdated";
       /** The canonical identifier of the governed zone. */
       readonly timeZoneId: string;
       readonly ruleId: RuleId;
@@ -57,8 +64,13 @@ export interface RuleSupport {
 
 /** Whether the running host's time zone data knows the rules this package patches. */
 export interface HostSupport {
-  /** `stale` when any governed rule is stale on this host. */
-  readonly status: "current" | "stale";
+  /**
+   * The most urgent verdict across every rule, in the order `stale`, then
+   * `rule_outdated`, then `current`: `stale` wins because correction still
+   * applies, so this can hide an outdated rule. Alert on `ruleSupport`
+   * instead of this field to catch `rule_outdated`.
+   */
+  readonly status: "current" | "stale" | "rule_outdated";
   /** Every rule's status on this host, in rule-table order. */
   readonly ruleSupport: readonly RuleSupport[];
 }
