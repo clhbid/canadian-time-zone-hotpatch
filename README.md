@@ -35,11 +35,9 @@ instance — and either install it globally with its `/global` entry point or ha
 `createHotpatch`, as [Supplying a Temporal implementation](#supplying-a-temporal-implementation)
 shows.
 
-Detecting an outdated rule (see [Reporting host support to analytics](#reporting-host-support-to-analytics)
-below) requires `Temporal.ZonedDateTime.prototype.getTimeZoneTransition`. Every native `Temporal`
-has it; a polyfill needs at least `temporal-polyfill` 0.3.0 or `@js-temporal/polyfill` 0.5.0.
-`createHotpatch` and the top-level functions throw `MissingTemporalError` for any implementation
-without it, with no fallback.
+Detection also requires `Temporal.ZonedDateTime.prototype.getTimeZoneTransition` (every native
+`Temporal` has it; polyfills need at least `temporal-polyfill` 0.3.0 or `@js-temporal/polyfill`
+0.5.0), or `createHotpatch` and the top-level functions throw `MissingTemporalError`.
 
 ### Verifying this package
 
@@ -131,14 +129,10 @@ const display = toCorrectedZonedTime({
 
 ### Reporting host support to analytics
 
-`status` takes one of four values for a governed zone: `current` (the host agrees with the rule),
-`stale` (the host reports a seasonal offset and is corrected), `rule_outdated` (the host has adopted
-the rule and then reported a later offset transition the rule table does not know about — the
-package defers to the host, and the rule table itself needs updating), or `unknown`/`not_applicable`
-for an ungoverned or unrecognized zone. `HostSupport.status` summarizes every rule with the most
-urgent verdict, in the order `stale`, then `rule_outdated`, then `current` — `stale` wins because
-correction still applies, so this summary alone can hide an outdated rule behind a stale one. Key an
-alert for `rule_outdated` on `ruleSupport`, not on `HostSupport.status`.
+`rule_outdated` means the host adopted a rule and then reported a further offset transition the
+rule table doesn't know about; the package defers to the host and the table needs updating.
+`HostSupport.status` summarizes with the most urgent verdict, `stale` &gt; `rule_outdated` &gt;
+`current`, so it can hide an outdated rule behind a stale one — alert on `ruleSupport` instead.
 
 ```ts
 import {
@@ -158,9 +152,6 @@ declare function send(event: {
 const host = inspectHostSupport();
 for (const { ruleId, status } of host.ruleSupport) {
   send({ rule_id: ruleId, rule_status: status, package_version: version });
-  // status — "rule_outdated" flags a rule this package needs updating for,
-  // reported from the moment the host knows of the revision, which may be
-  // years before it takes effect.
 }
 ```
 
@@ -265,22 +256,16 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   the zone (MST/MDT, PST/PDT, CST/CDT), as it does for a governed zone whose jurisdiction has not
   published an approved long/short label pair — the Northwest Territories zones today publish only
   the long name "Northwest Territories Time". The package derives no label from `Intl` itself.
-  `toTimeZoneLabel` always answers from the rule table, even once the host reports
-  `rule_outdated`: acting on that status is what keeps the label right, rather than the label
-  itself following the host.
+  `toTimeZoneLabel` follows the rule table regardless of host status, including `rule_outdated`.
 - It formats nothing. Applications format the corrected `instant` in the effective `timeZoneId`.
 - `toCorrectedInstant` trusts the host's own disambiguation before the divergence day, so a host
   whose seasonal data is wrong for earlier years is not corrected.
-- `rule_outdated` detection relies on `Temporal.ZonedDateTime.prototype.getTimeZoneTransition`. A
-  native implementation searches without limit, but the polyfills above search only a few years
-  past the later of the probed instant and the current time, so a polyfilled host reports a
-  revision further out than that as `current` rather than `rule_outdated`, until the search window
-  reaches it.
-- A rule-level verdict from a rule's first divergence onwards means a seasonal (`stale`) host
-  reports `stale` at every instant from that point on, including its daylight-period instants,
-  where earlier releases of this package reported `current` because the offset happened to
-  coincide with the rule's. Those instants now correct to the rule's fixed zone too: same offset,
-  different `timeZoneId`.
+- The polyfills above search only a few years past the later of the probed instant and the current
+  time, so a polyfilled host reports a revision further out than that as `current` rather than
+  `rule_outdated`, until the search window reaches it.
+- A rule's verdict applies to every instant from its first divergence onwards, so a never-adopted
+  (`stale`) seasonal host now reports `stale` through its daylight-period instants too, where those
+  previously read `current` because the offset happened to coincide with the rule's.
 
 ## Ownership and removal
 
