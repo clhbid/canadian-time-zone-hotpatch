@@ -1,7 +1,7 @@
 /**
  * Approved English labels for the rules that have one, and the lookup that
- * decides when one applies. A rule whose jurisdiction has published no
- * approved label has no entry here.
+ * decides when one applies. A rule whose jurisdiction has not published an
+ * approved long/short label pair has no entry here.
  *
  * Labels cannot alter offset rules, which are owned exclusively
  * by `src/rules.ts`.

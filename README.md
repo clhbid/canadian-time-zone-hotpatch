@@ -225,12 +225,14 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   [permanent-time announcement](https://news.gov.mb.ca/news/?item=75397); that Act is not in force —
   s. 4 commences it on a day fixed by proclamation and none has been made — so its legal
   commencement remains unset
-- Northwest Territories — the
+- Northwest Territories —
+  [Northwest Territories Time Regulations, NWT Reg 090-2026](https://www.canlii.org/en/nt/laws/regu/nwt-reg-090-2026/latest/nwt-reg-090-2026.html),
+  in force on 2026-08-21, which publish the long name "Northwest Territories Time" but no short
+  code, so neither zone is labelled; the
   [announcement](https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change)
-  that the regulations establishing Northwest Territories Time came into force on 2026-08-21; those
-  regulations carry no registration number, and give no short code, so neither zone is labelled.
-  The two zones take a rule each because `America/Inuvik` needs its own upstream fix and so goes
-  current later than `America/Yellowknife`
+  explains that the 2026-11-01 seasonal "fall back" is skipped. The two zones take a rule each
+  because `America/Inuvik` needs its own upstream fix and so goes current later than
+  `America/Yellowknife`
 
 ## Limitations
 
@@ -238,9 +240,9 @@ Sources, also cited beside each rule in [`src/rules.ts`](./src/rules.ts):
   passes through to the host.
 - Only the approved English labels are bundled, and only from a rule's first divergence onwards.
   Before it, `toTimeZoneLabel` returns nothing and a caller falls back to the host's own name for
-  the zone (MST/MDT, PST/PDT, CST/CDT), as it does for a governed zone whose jurisdiction has
-  published no approved label — the Northwest Territories zones today. The package derives no label
-  from `Intl` itself.
+  the zone (MST/MDT, PST/PDT, CST/CDT), as it does for a governed zone whose jurisdiction has not
+  published an approved long/short label pair — the Northwest Territories zones today publish only
+  the long name "Northwest Territories Time". The package derives no label from `Intl` itself.
 - It formats nothing. Applications format the corrected `instant` in the effective `timeZoneId`.
 - `toCorrectedInstant` trusts the host's own disambiguation before the divergence day, so a host
   whose seasonal data is wrong for earlier years is not corrected.

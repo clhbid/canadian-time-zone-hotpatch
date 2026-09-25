@@ -101,11 +101,11 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     jurisdiction: "Northwest Territories",
     offset: "-06:00",
     fixedTimeZoneId: "Etc/GMT+6",
-    // The regulations establishing Northwest Territories Time came into force
-    // on August 21, 2026. They carry no registration number, so the
-    // announcement is the citable source. It gives no short code, so this
-    // rule bundles no label.
-    // Source: https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change
+    // The Northwest Territories Time Regulations, NWT Reg 090-2026, came into
+    // force on August 21, 2026. They publish the long name "Northwest
+    // Territories Time" but no short code, so this rule bundles no label.
+    // Source:
+    // - https://www.canlii.org/en/nt/laws/regu/nwt-reg-090-2026/latest/nwt-reg-090-2026.html
     legalEffectiveInstant: "2026-08-21T00:00:00-06:00",
     firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
   }),
@@ -119,7 +119,8 @@ export const rules: readonly TimeZoneRule[] = Object.freeze([
     // Same regulations as Yellowknife, under a rule of its own: Inuvik needs
     // its own upstream tzdata fix, so the two zones go current at different
     // times and `inspectHostSupport` reports them separately.
-    // Source: https://www.gov.nt.ca/en/newsroom/northwest-territories-ends-seasonal-time-change
+    // Source:
+    // - https://www.canlii.org/en/nt/laws/regu/nwt-reg-090-2026/latest/nwt-reg-090-2026.html
     legalEffectiveInstant: "2026-08-21T00:00:00-06:00",
     firstDivergenceInstant: "2026-11-01T02:00:00-06:00"
   })
