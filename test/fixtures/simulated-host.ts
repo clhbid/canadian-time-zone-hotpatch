@@ -75,6 +75,16 @@ const seasonalZones: Readonly<Record<string, SeasonalZone>> = {
     standard: "-06:00",
     daylight: "-05:00",
     permanentFromYear: 2026
+  },
+  "America/Yellowknife": {
+    standard: "-07:00",
+    daylight: "-06:00",
+    permanentFromYear: 2026
+  },
+  "America/Inuvik": {
+    standard: "-07:00",
+    daylight: "-06:00",
+    permanentFromYear: 2026
   }
 };
 

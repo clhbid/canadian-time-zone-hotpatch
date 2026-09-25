@@ -19,6 +19,8 @@ const timeZoneIds = fc.oneof(
     "America/Edmonton",
     "America/Vancouver",
     "America/Winnipeg",
+    "America/Yellowknife",
+    "America/Inuvik",
     "America/Toronto",
     "Etc/GMT+6",
     "UTC"

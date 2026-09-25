@@ -5,7 +5,9 @@
 export type RuleId =
   | "ab-permanent-time-2026"
   | "bc-permanent-time-2026"
-  | "mb-permanent-time-2026";
+  | "mb-permanent-time-2026"
+  | "nt-yellowknife-permanent-time-2026"
+  | "nt-inuvik-permanent-time-2026";
 
 /** Approved display names for a governed zone, e.g. `"Alberta Time"` and `"ABT"`. */
 export interface TimeZoneLabel {

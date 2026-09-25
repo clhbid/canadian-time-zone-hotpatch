@@ -1,7 +1,7 @@
 {
   "name": "@clhbid/canadian-time-zone-hotpatch",
   "version": "0.2.0",
-  "description": "A side-effect-free Temporal adapter that detects and corrects stale Canadian permanent-time zone data (Alberta, British Columbia, Manitoba) without patching Temporal or Intl globally.",
+  "description": "A side-effect-free Temporal adapter that detects and corrects stale Canadian permanent-time zone data (Alberta, British Columbia, Manitoba, Northwest Territories) without patching Temporal or Intl globally.",
   "keywords": [
     "temporal",
     "timezone",
@@ -9,6 +9,7 @@
     "alberta",
     "british-columbia",
     "manitoba",
+    "northwest-territories",
     "daylight-saving-time"
   ],
   "homepage": "https://github.com/clhbid/canadian-time-zone-hotpatch#readme",
