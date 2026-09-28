@@ -141,13 +141,15 @@ export function simulateHostOffset(
   }
 
   if (typeof tzdata === "object") {
-    // The rule's permanent offset until the revision, then the jurisdiction's
-    // further change, which the rule table doesn't know about. That change is
+    // A current host until the revision, then the jurisdiction's further
+    // change, which the rule table doesn't know about. That change is
     // simulated as a return to seasonal clocks: newer tzdata, not stale tzdata.
     const revisedAt = Date.parse(tzdata.revisedAt);
-    return epochMilliseconds < revisedAt
-      ? zone.daylight
-      : simulateHostOffset("stale", timeZoneId, epochMilliseconds);
+    return simulateHostOffset(
+      epochMilliseconds < revisedAt ? "current" : "stale",
+      timeZoneId,
+      epochMilliseconds
+    );
   }
 
   const permanentFrom = transitionAt(
@@ -188,9 +190,15 @@ export function simulateNextTransition(
 
   if (typeof tzdata === "object") {
     const revisedAt = Date.parse(tzdata.revisedAt);
-    return afterMilliseconds < revisedAt
-      ? revisedAt
-      : simulateNextTransition("stale", timeZoneId, afterMilliseconds);
+    if (afterMilliseconds >= revisedAt) {
+      return simulateNextTransition("stale", timeZoneId, afterMilliseconds);
+    }
+    const next = simulateNextTransition(
+      "current",
+      timeZoneId,
+      afterMilliseconds
+    );
+    return next !== undefined && next < revisedAt ? next : revisedAt;
   }
 
   const permanentFrom = transitionAt(

@@ -119,6 +119,18 @@ describe("toCorrectedZonedTime", () => {
         });
       }
     );
+
+    it("defers to the host's seasonal offset before adoption", () => {
+      // act
+      const result = toCorrectedZonedTime({
+        instant: "2026-01-15T12:00:00Z",
+        timeZoneId: "America/Edmonton"
+      });
+      // assert
+      expect(result.timeZoneId).toBe("America/Edmonton");
+      expect(result.offset).toBe("-07:00");
+      expect(result.support.status).toBe("current");
+    });
   });
 
   it("normalizes aliases before correcting", () => {

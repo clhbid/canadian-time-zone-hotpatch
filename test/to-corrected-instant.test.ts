@@ -206,6 +206,18 @@ describe("toCorrectedInstant", () => {
       });
     });
 
+    it("keeps the host's spring-forward gap before adoption", () => {
+      // act
+      const attempt = () =>
+        toCorrectedInstant({
+          wallTime: "2026-03-08T02:30:00",
+          timeZoneId: "America/Edmonton",
+          disambiguation: "reject"
+        });
+      // assert
+      expect(attempt).toThrow(RangeError);
+    });
+
     it("defers to the host's seasonal offset after the revision", () => {
       // assert
       expect(
