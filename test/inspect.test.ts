@@ -215,6 +215,15 @@ describe("inspectTimeZoneSupport", () => {
         inspectTimeZoneSupport("America/Edmonton", "not-an-instant")
       ).toThrow(RangeError);
     });
+
+    it("throws Temporal's RangeError for a malformed instant in a zone the host cannot observe", () => {
+      // arrange
+      hostState.tzdata = { "America/Edmonton": "unavailable" };
+      // assert
+      expect(() =>
+        inspectTimeZoneSupport("America/Edmonton", "not-an-instant")
+      ).toThrow(RangeError);
+    });
   });
 
   describe("rule-owned probe", () => {

@@ -135,15 +135,16 @@ export function inspectTimeZoneSupport(
     );
   }
 
+  const probe = instant ? temporal.Instant.from(instant) : undefined;
   const verdict = hostVerdict(temporal, rule);
   if (verdict === TimeZoneSupportStatus.unknown) {
     return ungovernedSupport(TimeZoneSupportStatus.unknown, timeZoneId);
   }
 
   if (
-    instant &&
+    probe &&
     temporal.Instant.compare(
-      temporal.Instant.from(instant),
+      probe,
       temporal.Instant.from(rule.firstDivergenceInstant)
     ) < 0
   ) {
