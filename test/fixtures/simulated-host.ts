@@ -22,7 +22,11 @@ import type { Disambiguation } from "../../src/types.js";
 
 export type HostModule = typeof hostModule;
 
-/** A rule the host adopted at first divergence, then revised at `revisedAt`, an ISO instant. */
+/**
+ * A host whose tzdata is newer than the rule table: it adopted the rule at
+ * first divergence and also knows a further change the jurisdiction makes
+ * at `revisedAt`, an ISO instant, that no bundled rule records.
+ */
 export interface RevisedTzdata {
   readonly revisedAt: string;
 }
@@ -137,8 +141,9 @@ export function simulateHostOffset(
   }
 
   if (typeof tzdata === "object") {
-    // Adopted the rule's permanent offset until the revision, then back to
-    // the seasonal cycle a `stale` host never left.
+    // The rule's permanent offset until the revision, then the jurisdiction's
+    // further change, which the rule table doesn't know about. That change is
+    // simulated as a return to seasonal clocks: newer tzdata, not stale tzdata.
     const revisedAt = Date.parse(tzdata.revisedAt);
     return epochMilliseconds < revisedAt
       ? zone.daylight
@@ -268,8 +273,27 @@ export function simulatedHostModule(
   actual: HostModule,
   state: SimulatedHostState
 ): HostModule {
+  // One key per simulated tzdata, so a test that switches it is never served
+  // observations cached under another.
+  const dataKeys = new WeakMap<
+    object,
+    Map<SimulatedHostState["tzdata"], object>
+  >();
   return {
     ...actual,
+    hostDataKey(temporal) {
+      let byTzdata = dataKeys.get(temporal);
+      if (byTzdata === undefined) {
+        byTzdata = new Map();
+        dataKeys.set(temporal, byTzdata);
+      }
+      let key = byTzdata.get(state.tzdata);
+      if (key === undefined) {
+        key = {};
+        byTzdata.set(state.tzdata, key);
+      }
+      return key;
+    },
     isKnownTimeZoneId(temporal, timeZoneId) {
       if (isUnavailable(state, timeZoneId)) {
         return false;

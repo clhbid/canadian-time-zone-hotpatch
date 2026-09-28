@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { observeNextTransition } from "../src/host.js";
 import { inspectTimeZoneSupport as inspect } from "../src/inspect.js";
 import { rules } from "../src/rules.js";
 import type {
@@ -21,11 +22,16 @@ const hostState = vi.hoisted<SimulatedHostState>(() => ({ tzdata: "stale" }));
 vi.mock("../src/host.js", async (importOriginal) => {
   const actual = await importOriginal<HostModule>();
   const { simulatedHostModule } = await import("./fixtures/simulated-host.js");
-  return simulatedHostModule(actual, hostState);
+  const simulated = simulatedHostModule(actual, hostState);
+  return {
+    ...simulated,
+    observeNextTransition: vi.fn(simulated.observeNextTransition)
+  };
 });
 
 beforeEach(() => {
   hostState.tzdata = "stale";
+  vi.mocked(observeNextTransition).mockClear();
 });
 
 describe("inspectTimeZoneSupport", () => {
@@ -431,5 +437,34 @@ describe("inspectHostSupport", () => {
     for (const entry of support.ruleSupport) {
       expect(Object.isFrozen(entry)).toBe(true);
     }
+  });
+});
+
+describe("the host's verdict on a rule", () => {
+  // Corrections run in render paths, so the transition search behind
+  // `rule_outdated` must not repeat per call.
+  it("is observed once, however many calls and instants ask for it", () => {
+    // arrange
+    // A fresh record, so no earlier case has observed this host's data.
+    hostState.tzdata = { "America/Edmonton": "current" };
+    const instants = [
+      undefined,
+      "2026-12-25T12:00:00Z",
+      "2030-01-01T00:00:00Z"
+    ];
+
+    // act
+    for (const instant of instants) {
+      inspectTimeZoneSupport("America/Edmonton", instant);
+      inspectTimeZoneSupport("Canada/Mountain", instant);
+    }
+    inspectHostSupport();
+
+    // assert
+    expect(
+      vi
+        .mocked(observeNextTransition)
+        .mock.calls.filter(([zone]) => zone === "America/Edmonton")
+    ).toHaveLength(1);
   });
 });

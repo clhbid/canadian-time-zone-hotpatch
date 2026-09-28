@@ -24,6 +24,15 @@ export function observeOffset(
   }
 }
 
+/**
+ * Identifies the time zone data `temporal` reads, for caching what is
+ * observed from it. That data cannot change while the page runs, so the
+ * namespace itself serves.
+ */
+export function hostDataKey(temporal: TemporalNamespace): object {
+  return temporal;
+}
+
 /** Whether the host recognizes `timeZoneId` as a time zone identifier. */
 export function isKnownTimeZoneId(
   temporal: TemporalNamespace,

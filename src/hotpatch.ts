@@ -84,9 +84,10 @@ export interface Hotpatch {
 
 /**
  * Builds a `Hotpatch` on `options.temporal`, or on `globalThis.Temporal` when
- * it is omitted. A supplied implementation is checked here rather than at
- * first use, so the mistake surfaces where it was made; a missing global one
- * surfaces from each call instead.
+ * it is omitted. A supplied implementation is validated here, so the mistake
+ * surfaces where it was made. Without one, nothing is read here: each call
+ * reads the global and throws `MissingTemporalError` if it is missing or
+ * incompatible. Either way, an implementation is validated only once.
  * @throws {MissingTemporalError} When `options.temporal` is not a usable
  * Temporal implementation.
  */

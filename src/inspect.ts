@@ -7,13 +7,19 @@
  */
 import type { HostInstant } from "./host.js";
 import {
+  hostDataKey,
   isKnownTimeZoneId,
   observeNextTransition,
   observeOffset
 } from "./host.js";
 import { findRule, rules, type TimeZoneRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
-import type { HostSupport, RuleSupport, TimeZoneSupport } from "./types.js";
+import type {
+  HostSupport,
+  RuleId,
+  RuleSupport,
+  TimeZoneSupport
+} from "./types.js";
 import { TimeZoneSupportStatus } from "./types.js";
 
 type GovernedStatus = Exclude<
@@ -25,7 +31,7 @@ type GovernedStatus = Exclude<
  * A rule's verdict at first divergence.
  * @param rule - The rule to verdict.
  * @param firstDivergence - The rule's first divergence instant.
- * @param offsetAtDivergence - The host's offset there, or `undefined` if unobservable.
+ * @param offsetAtDivergence - The host's offset there.
  * @returns `stale` if the host never reported the rule's offset there,
  * `rule_outdated` if it did and later reports a further offset transition,
  * else `current`.
@@ -33,7 +39,7 @@ type GovernedStatus = Exclude<
 function ruleVerdictAtDivergence(
   rule: TimeZoneRule,
   firstDivergence: HostInstant,
-  offsetAtDivergence: string | undefined
+  offsetAtDivergence: string
 ): GovernedStatus {
   if (offsetAtDivergence !== rule.offset) {
     return TimeZoneSupportStatus.stale;
@@ -45,6 +51,40 @@ function ruleVerdictAtDivergence(
   return revision !== undefined
     ? TimeZoneSupportStatus.rule_outdated
     : TimeZoneSupportStatus.current;
+}
+
+type HostVerdict = GovernedStatus | "unknown";
+
+/** Each rule's `HostVerdict`, per host data; see `hostVerdict`. */
+const verdicts = new WeakMap<object, Map<RuleId, HostVerdict>>();
+
+/**
+ * The host's verdict on `rule`: `unknown` when it cannot observe the zone,
+ * else the verdict at first divergence. That verdict does not depend on the
+ * instant probed and costs a transition search, so it is observed once per
+ * host data and cached.
+ */
+function hostVerdict(
+  temporal: TemporalNamespace,
+  rule: TimeZoneRule
+): HostVerdict {
+  const key = hostDataKey(temporal);
+  let byRule = verdicts.get(key);
+  if (byRule === undefined) {
+    byRule = new Map();
+    verdicts.set(key, byRule);
+  }
+  let verdict = byRule.get(rule.ruleId);
+  if (verdict === undefined) {
+    const firstDivergence = temporal.Instant.from(rule.firstDivergenceInstant);
+    const offset = observeOffset(rule.canonicalTimeZoneId, firstDivergence);
+    verdict =
+      offset === undefined
+        ? TimeZoneSupportStatus.unknown
+        : ruleVerdictAtDivergence(rule, firstDivergence, offset);
+    byRule.set(rule.ruleId, verdict);
+  }
+  return verdict;
 }
 
 /** Builds a frozen `TimeZoneSupport` for an ungoverned or unrecognized zone. */
@@ -95,27 +135,21 @@ export function inspectTimeZoneSupport(
     );
   }
 
-  const firstDivergence = temporal.Instant.from(rule.firstDivergenceInstant);
-  const probe = instant ? temporal.Instant.from(instant) : firstDivergence;
-
-  const observedOffset = observeOffset(rule.canonicalTimeZoneId, probe);
-  if (observedOffset === undefined) {
+  const verdict = hostVerdict(temporal, rule);
+  if (verdict === TimeZoneSupportStatus.unknown) {
     return ungovernedSupport(TimeZoneSupportStatus.unknown, timeZoneId);
   }
 
-  if (temporal.Instant.compare(probe, firstDivergence) < 0) {
+  if (
+    instant &&
+    temporal.Instant.compare(
+      temporal.Instant.from(instant),
+      temporal.Instant.from(rule.firstDivergenceInstant)
+    ) < 0
+  ) {
     return governedSupport(TimeZoneSupportStatus.current, rule);
   }
-
-  const offsetAtDivergence =
-    temporal.Instant.compare(probe, firstDivergence) === 0
-      ? observedOffset
-      : observeOffset(rule.canonicalTimeZoneId, firstDivergence);
-
-  return governedSupport(
-    ruleVerdictAtDivergence(rule, firstDivergence, offsetAtDivergence),
-    rule
-  );
+  return governedSupport(verdict, rule);
 }
 
 /**

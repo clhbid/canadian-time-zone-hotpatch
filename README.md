@@ -37,7 +37,14 @@ shows.
 
 Detection also requires `Temporal.ZonedDateTime.prototype.getTimeZoneTransition` (every native
 `Temporal` has it; polyfills need at least `temporal-polyfill` 0.3.0 or `@js-temporal/polyfill`
-0.5.0), or `createHotpatch` and the top-level functions throw `MissingTemporalError`.
+0.5.0). An implementation without it throws `MissingTemporalError`, and where that surfaces depends
+on where the implementation comes from:
+
+- `createHotpatch({ temporal })` validates the one it is given and throws immediately.
+- The top-level functions, and an instance from `createHotpatch()`, read `globalThis.Temporal` when
+  called and throw from that call.
+
+Importing the package never throws. Each implementation is validated once, not on every call.
 
 ### Verifying this package
 

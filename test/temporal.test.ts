@@ -67,6 +67,24 @@ function namespaceCandidate() {
   };
 }
 
+/**
+ * A namespace that forwards to the polyfill and counts reads of
+ * `ZonedDateTime`, which only validation makes: the package reaches zoned
+ * times through instances, never through the namespace.
+ */
+function countingValidations() {
+  const counter = { validations: 0 };
+  const namespace = new Proxy(PolyfillTemporal, {
+    get(target, property, receiver) {
+      if (property === "ZonedDateTime") {
+        counter.validations += 1;
+      }
+      return Reflect.get(target, property, receiver) as unknown;
+    }
+  });
+  return { namespace, counter };
+}
+
 beforeEach(() => {
   hostState.tzdata = "stale";
 });
@@ -298,6 +316,39 @@ describe("a global Temporal implementation", () => {
     expect(toCorrectedZonedTime(edmonton)).toMatchObject(corrected);
   });
 
+  it("is validated on the first call only", async () => {
+    // arrange
+    const { namespace, counter } = countingValidations();
+    vi.stubGlobal("Temporal", namespace);
+    const pkg = await import("../src/index.js");
+
+    // act
+    for (const [, call] of [...everyCall, ...everyCall]) {
+      call(pkg);
+    }
+
+    // assert
+    expect(counter.validations).toBe(1);
+  });
+
+  it("is validated afresh when a different global replaces it", async () => {
+    // arrange
+    const first = countingValidations();
+    const second = countingValidations();
+    const { toCorrectedZonedTime } = await import("../src/index.js");
+
+    // act
+    vi.stubGlobal("Temporal", first.namespace);
+    toCorrectedZonedTime(edmonton);
+    vi.stubGlobal("Temporal", second.namespace);
+    toCorrectedZonedTime(edmonton);
+
+    // assert
+    expect([first.counter.validations, second.counter.validations]).toEqual([
+      1, 1
+    ]);
+  });
+
   it("is never assigned by the package itself", async () => {
     // arrange
     vi.stubGlobal("Temporal", undefined);
@@ -367,6 +418,20 @@ describe("a supplied Temporal implementation", () => {
       long: "Alberta Time",
       short: "ABT"
     });
+  });
+
+  it("is validated by createHotpatch and never again by its calls", () => {
+    // arrange
+    const { namespace, counter } = countingValidations();
+
+    // act
+    const hotpatch = createHotpatch({ temporal: namespace });
+    for (const [, call] of [...everyCall, ...everyCall]) {
+      call(hotpatch);
+    }
+
+    // assert
+    expect(counter.validations).toBe(1);
   });
 
   it("treats an empty options object like no options at all", () => {
