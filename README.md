@@ -35,17 +35,10 @@ instance — and either install it globally with its `/global` entry point or ha
 `createHotpatch`, as [Supplying a Temporal implementation](#supplying-a-temporal-implementation)
 shows.
 
-`Temporal.ZonedDateTime.prototype.getTimeZoneTransition`is also required. Every native
-`Temporal` has it; polyfills need at least `temporal-polyfill` 0.3.0 or `@js-temporal/polyfill`
-0.5.0. An implementation without it throws `MissingTemporalError`.
-
-When the `Temporal` implementation is validated depends on if you're using `createHotpath()` or not.
-
-- `createHotpatch({ temporal })` validates the implementation when it is given and throws immediately.
-- The top-level functions read `globalThis.Temporal` when
-  called and throw from that call.
-
-Importing the package never throws and is always side-effect free. The `Temporal` implementation is only validated once, not on every call.
+`Temporal.ZonedDateTime.prototype.getTimeZoneTransition` is also required. Every native `Temporal`
+has it; polyfills need at least `temporal-polyfill` 0.3.0 or `@js-temporal/polyfill` 0.5.0. An
+implementation without it throws `MissingTemporalError`; see
+[Supplying a Temporal implementation](#supplying-a-temporal-implementation) for when that happens.
 
 ### Verifying this package
 
@@ -134,6 +127,15 @@ const display = toCorrectedZonedTime({
 });
 // display.offset — "-06:00"
 ```
+
+When the `Temporal` implementation is validated depends on whether you pass one to `createHotpatch`:
+
+- `createHotpatch({ temporal })` validates the implementation it is given and throws immediately.
+- The top-level functions, and an instance from `createHotpatch()` where you don't supply a
+  `Temporal` implementation, read `globalThis.Temporal` when called and throw from that call.
+
+Importing the package never throws and is always side-effect free. Each `Temporal` implementation is
+validated only once, not on every call.
 
 ### Reporting host support to analytics
 
