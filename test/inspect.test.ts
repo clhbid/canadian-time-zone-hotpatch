@@ -1,11 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { observeNextTransition } from "../src/host.js";
 import { inspectTimeZoneSupport as inspect } from "../src/inspect.js";
 import { rules } from "../src/rules.js";
 import type {
   HostModule,
   SimulatedHostState,
-  SimulatedScalarTzdata
+  SimulatedScalarTzdata,
+  SimulatedTzdata
 } from "./fixtures/simulated-host.js";
 import { hotpatch, temporal } from "./fixtures/temporal.js";
 
@@ -446,6 +447,39 @@ describe("inspectHostSupport", () => {
     for (const entry of support.ruleSupport) {
       expect(Object.isFrozen(entry)).toBe(true);
     }
+  });
+
+  // Telemetry reports stale hosts before the rules take effect, so the
+  // answer must not depend on when it is asked.
+  describe("whenever it is called", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    describe.each<[string, SimulatedTzdata]>([
+      ["stale", "stale"],
+      ["current", "current"],
+      ["rule_outdated", { revisedAt: "2027-11-07T02:00:00-07:00" }]
+    ])("on a host where every rule is %s", (status, tzdata) => {
+      it.each([
+        ["well before first divergence", "2026-09-28T12:00:00Z"],
+        ["just before every first divergence", "2026-11-01T06:59:59Z"],
+        ["just after every first divergence", "2026-11-01T09:00:00Z"],
+        ["long after first divergence", "2031-01-01T00:00:00Z"]
+      ])("reports that status when called %s", (_, now) => {
+        // arrange
+        vi.useFakeTimers({ toFake: ["Date"] });
+        vi.setSystemTime(now);
+        // A fresh record, so no verdict cached under another clock is served.
+        hostState.tzdata = Object.fromEntries(
+          rules.map((rule) => [rule.canonicalTimeZoneId, tzdata])
+        );
+        // assert
+        expect(inspectHostSupport()).toEqual({
+          ruleSupport: rules.map((rule) => ({ ruleId: rule.ruleId, status }))
+        });
+      });
+    });
   });
 });
 
