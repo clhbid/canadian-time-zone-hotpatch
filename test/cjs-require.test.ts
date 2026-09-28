@@ -29,28 +29,35 @@ describe("require() from CommonJS", () => {
   });
 
   it("exposes the package's runtime surface", () => {
+    // assert
     expect(Object.keys(load()).sort()).toEqual(packageRootExportNames);
   });
 
   it("corrects an instant", () => {
+    // arrange
     const { toCorrectedZonedTime } = load().createHotpatch({
       temporal: Temporal
     });
 
+    // act
     const display = toCorrectedZonedTime({
       instant: "2026-11-15T19:00:00Z",
       timeZoneId: "America/Edmonton"
     });
 
+    // assert
     expect(display.offset).toBe("-06:00");
   });
 
   it("reaches TimeZoneSupportStatus.unknown through inspectTimeZoneSupport", () => {
+    // arrange
     const built = load();
+    // act
     const { inspectTimeZoneSupport } = built.createHotpatch({
       temporal: Temporal
     });
 
+    // assert
     expect(inspectTimeZoneSupport("Mars/Olympus_Mons")).toEqual({
       status: built.TimeZoneSupportStatus.unknown,
       timeZoneId: "Mars/Olympus_Mons"

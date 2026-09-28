@@ -5,19 +5,118 @@
  * Detection never sniffs user agents, operating systems, ICU, Temporal
  * implementations, or tzdata versions: an observed offset is the only signal.
  */
-import { isKnownTimeZoneId, observeOffset } from "./host.js";
-import { findRule, rules } from "./rules.js";
+import type { HostInstant } from "./host.js";
+import {
+  hostDataKey,
+  isKnownTimeZoneId,
+  observeNextTransition,
+  observeOffset
+} from "./host.js";
+import { findRule, rules, type TimeZoneRule } from "./rules.js";
 import type { TemporalNamespace } from "./temporal.js";
-import type { HostSupport, RuleSupport, TimeZoneSupport } from "./types.js";
+import type {
+  HostSupport,
+  RuleId,
+  RuleSupport,
+  TimeZoneSupport
+} from "./types.js";
 import { TimeZoneSupportStatus } from "./types.js";
+
+type GovernedStatus = Exclude<
+  TimeZoneSupportStatus,
+  "not_applicable" | "unknown"
+>;
+
+/**
+ * A rule's verdict at first divergence.
+ * @param rule - The rule to verdict.
+ * @param firstDivergence - The rule's first divergence instant.
+ * @param offsetAtDivergence - The host's offset there.
+ * @returns `stale` if the host never reported the rule's offset there,
+ * `rule_outdated` if it did and later reports a further offset transition,
+ * else `current`.
+ */
+function ruleVerdictAtDivergence(
+  rule: TimeZoneRule,
+  firstDivergence: HostInstant,
+  offsetAtDivergence: string
+): GovernedStatus {
+  if (offsetAtDivergence !== rule.offset) {
+    return TimeZoneSupportStatus.stale;
+  }
+  const revision = observeNextTransition(
+    rule.canonicalTimeZoneId,
+    firstDivergence
+  );
+  return revision !== undefined
+    ? TimeZoneSupportStatus.rule_outdated
+    : TimeZoneSupportStatus.current;
+}
+
+type HostVerdict = GovernedStatus | "unknown";
+
+/** Each rule's `HostVerdict`, per host data; see `hostVerdict`. */
+const verdicts = new WeakMap<object, Map<RuleId, HostVerdict>>();
+
+/**
+ * The host's verdict on `rule`: `unknown` when it cannot observe the zone,
+ * else the verdict at first divergence. That verdict does not depend on the
+ * instant probed and costs a transition search, so it is observed once per
+ * host data and cached.
+ */
+function hostVerdict(
+  temporal: TemporalNamespace,
+  rule: TimeZoneRule
+): HostVerdict {
+  const key = hostDataKey(temporal);
+  let byRule = verdicts.get(key);
+  if (byRule === undefined) {
+    byRule = new Map();
+    verdicts.set(key, byRule);
+  }
+  let verdict = byRule.get(rule.ruleId);
+  if (verdict === undefined) {
+    const firstDivergence = temporal.Instant.from(rule.firstDivergenceInstant);
+    const offset = observeOffset(rule.canonicalTimeZoneId, firstDivergence);
+    verdict =
+      offset === undefined
+        ? TimeZoneSupportStatus.unknown
+        : ruleVerdictAtDivergence(rule, firstDivergence, offset);
+    byRule.set(rule.ruleId, verdict);
+  }
+  return verdict;
+}
+
+/** Builds a frozen `TimeZoneSupport` for an ungoverned or unrecognized zone. */
+function ungovernedSupport(
+  status: "not_applicable" | "unknown",
+  timeZoneId: string
+): TimeZoneSupport {
+  return Object.freeze({ status, timeZoneId } satisfies TimeZoneSupport);
+}
+
+/** Builds a frozen `TimeZoneSupport` for a zone `rule` governs. */
+function governedSupport(
+  status: GovernedStatus,
+  rule: TimeZoneRule
+): TimeZoneSupport {
+  return Object.freeze({
+    status,
+    timeZoneId: rule.canonicalTimeZoneId,
+    ruleId: rule.ruleId
+  } satisfies TimeZoneSupport);
+}
 
 /**
  * Inspects host support for `timeZoneId`, probing at `instant` or, when it is
- * omitted, at the governing rule's own first divergence — the probe that
- * answers "does this host know the rule?" without caller bias.
+ * omitted, at the governing rule's own first divergence.
  *
  * Never throws for a malformed or unrecognized zone identifier — that is an
  * `unknown` result.
+ * @param temporal - Temporal namespace to probe with.
+ * @param timeZoneId - IANA time zone identifier, matched case-insensitively; aliases are accepted.
+ * @param instant - ISO 8601 instant to probe at; defaults to the rule's first divergence.
+ * @returns The zone's support.
  * @throws {RangeError} When `instant` is supplied and malformed. The public
  * export takes no `instant`, so nothing a caller passes it can throw.
  */
@@ -28,49 +127,37 @@ export function inspectTimeZoneSupport(
 ): TimeZoneSupport {
   const rule = findRule(timeZoneId);
   if (!rule) {
-    return Object.freeze({
-      status: isKnownTimeZoneId(temporal, timeZoneId)
+    return ungovernedSupport(
+      isKnownTimeZoneId(temporal, timeZoneId)
         ? TimeZoneSupportStatus.not_applicable
         : TimeZoneSupportStatus.unknown,
       timeZoneId
-    } satisfies TimeZoneSupport);
+    );
   }
 
-  const firstDivergence = temporal.Instant.from(rule.firstDivergenceInstant);
-  const probe = instant ? temporal.Instant.from(instant) : firstDivergence;
-
-  const observedOffset = observeOffset(rule.canonicalTimeZoneId, probe);
-  if (observedOffset === undefined) {
-    // The package knows the zone but this host does not, so its support
-    // cannot be classified.
-    return Object.freeze({
-      status: TimeZoneSupportStatus.unknown,
-      timeZoneId
-    } satisfies TimeZoneSupport);
+  const probe = instant ? temporal.Instant.from(instant) : undefined;
+  const verdict = hostVerdict(temporal, rule);
+  if (verdict === TimeZoneSupportStatus.unknown) {
+    return ungovernedSupport(TimeZoneSupportStatus.unknown, timeZoneId);
   }
 
-  // Before first divergence a seasonal host is still correct by definition,
-  // so whatever it reports is what the rule expects and no correction is due.
-  const expectedOffset =
-    temporal.Instant.compare(probe, firstDivergence) < 0
-      ? observedOffset
-      : rule.offset;
-
-  return Object.freeze({
-    status:
-      expectedOffset === observedOffset
-        ? TimeZoneSupportStatus.current
-        : TimeZoneSupportStatus.stale,
-    timeZoneId: rule.canonicalTimeZoneId,
-    ruleId: rule.ruleId
-  } satisfies TimeZoneSupport);
+  if (
+    probe &&
+    temporal.Instant.compare(
+      probe,
+      temporal.Instant.from(rule.firstDivergenceInstant)
+    ) < 0
+  ) {
+    return governedSupport(TimeZoneSupportStatus.current, rule);
+  }
+  return governedSupport(verdict, rule);
 }
 
 /**
  * Asks whether this host's timezone data knows the rules this package
- * patches, probing every rule at that rule's own first divergence. A host
- * that cannot observe a governed zone at all counts as stale for that rule,
- * since it cannot be assured to handle the zone correctly.
+ * patches, probing every rule at that rule's own first divergence.
+ * @param temporal - Temporal namespace to probe with.
+ * @returns Every rule's status on this host, in rule-table order.
  */
 export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
   const ruleSupport = rules.map((rule) => {
@@ -85,11 +172,6 @@ export function inspectHostSupport(temporal: TemporalNamespace): HostSupport {
     } satisfies RuleSupport);
   });
   return Object.freeze({
-    status: ruleSupport.every(
-      (entry) => entry.status === TimeZoneSupportStatus.current
-    )
-      ? TimeZoneSupportStatus.current
-      : TimeZoneSupportStatus.stale,
     ruleSupport: Object.freeze(ruleSupport)
   } satisfies HostSupport);
 }

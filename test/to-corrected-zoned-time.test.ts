@@ -2,12 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { UnknownTimeZoneError } from "../src/index.js";
 import { inspectTimeZoneSupport } from "../src/inspect.js";
 import { rules } from "../src/rules.js";
-import type { HostModule, SimulatedTzdata } from "./fixtures/simulated-host.js";
+import type {
+  HostModule,
+  SimulatedHostState,
+  SimulatedScalarTzdata
+} from "./fixtures/simulated-host.js";
 import { hotpatch, temporal } from "./fixtures/temporal.js";
 
 const { toCorrectedZonedTime } = hotpatch;
 
-const hostState = vi.hoisted(() => ({ tzdata: "stale" as SimulatedTzdata }));
+const hostState = vi.hoisted<SimulatedHostState>(() => ({ tzdata: "stale" }));
 
 vi.mock("../src/host.js", async (importOriginal) => {
   const actual = await importOriginal<HostModule>();
@@ -21,10 +25,12 @@ beforeEach(() => {
 
 describe("toCorrectedZonedTime", () => {
   it("keeps the canonical zone before first divergence", () => {
+    // act
     const result = toCorrectedZonedTime({
       instant: "2026-06-01T12:00:00Z",
       timeZoneId: "America/Edmonton"
     });
+    // assert
     expect(result).toEqual({
       instant: "2026-06-01T12:00:00Z",
       timeZoneId: "America/Edmonton",
@@ -40,10 +46,12 @@ describe("toCorrectedZonedTime", () => {
     ["America/Yellowknife", "Etc/GMT+6", "-06:00"],
     ["America/Inuvik", "Etc/GMT+6", "-06:00"]
   ])("corrects %s to %s once stale", (timeZoneId, fixed, offset) => {
+    // act
     const result = toCorrectedZonedTime({
       instant: "2026-12-25T12:00:00Z",
       timeZoneId
     });
+    // assert
     expect(result.timeZoneId).toBe(fixed);
     expect(result.offset).toBe(offset);
   });
@@ -52,6 +60,7 @@ describe("toCorrectedZonedTime", () => {
     ["America/Yellowknife", "nt-yellowknife-permanent-time-2026"],
     ["America/Inuvik", "nt-inuvik-permanent-time-2026"]
   ])("corrects %s under its own rule on a stale host", (timeZoneId, ruleId) => {
+    // assert
     expect(
       toCorrectedZonedTime({
         instant: "2026-11-15T19:00:00Z",
@@ -68,31 +77,80 @@ describe("toCorrectedZonedTime", () => {
   it.each(["America/Yellowknife", "America/Inuvik"])(
     "passes %s through under its canonical identifier on a current host",
     (timeZoneId) => {
+      // arrange
       hostState.tzdata = "current";
+      // act
       const result = toCorrectedZonedTime({
         instant: "2026-11-15T19:00:00Z",
         timeZoneId
       });
+      // assert
       expect(result.timeZoneId).toBe(timeZoneId);
       expect(result.offset).toBe("-06:00");
       expect(result.support.status).toBe("current");
     }
   );
 
+  describe("a host that adopted the rule and later revised it", () => {
+    const revisedAt = "2027-11-07T02:00:00-07:00";
+
+    beforeEach(() => {
+      hostState.tzdata = { "America/Edmonton": { revisedAt } };
+    });
+
+    it.each([
+      ["before the revision", "2027-06-01T12:00:00Z", "-06:00"],
+      ["after the revision", "2028-01-15T12:00:00Z", "-07:00"]
+    ])(
+      "defers to the host %s, under its canonical identifier",
+      (_label, instant, offset) => {
+        // act
+        const result = toCorrectedZonedTime({
+          instant,
+          timeZoneId: "America/Edmonton"
+        });
+        // assert
+        expect(result.timeZoneId).toBe("America/Edmonton");
+        expect(result.offset).toBe(offset);
+        expect(result.support).toEqual({
+          status: "rule_outdated",
+          timeZoneId: "America/Edmonton",
+          ruleId: "ab-permanent-time-2026"
+        });
+      }
+    );
+
+    it("defers to the host's seasonal offset before adoption", () => {
+      // act
+      const result = toCorrectedZonedTime({
+        instant: "2026-01-15T12:00:00Z",
+        timeZoneId: "America/Edmonton"
+      });
+      // assert
+      expect(result.timeZoneId).toBe("America/Edmonton");
+      expect(result.offset).toBe("-07:00");
+      expect(result.support.status).toBe("current");
+    });
+  });
+
   it("normalizes aliases before correcting", () => {
+    // act
     const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "canada/mountain"
     });
+    // assert
     expect(result.support.timeZoneId).toBe("America/Edmonton");
     expect(result.timeZoneId).toBe("Etc/GMT+6");
   });
 
   it("passes an ungoverned zone through to the host", () => {
+    // act
     const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "America/Dawson_Creek"
     });
+    // assert
     expect(result).toEqual({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "America/Dawson_Creek",
@@ -102,14 +160,17 @@ describe("toCorrectedZonedTime", () => {
   });
 
   it("returns a frozen result", () => {
+    // act
     const result = toCorrectedZonedTime({
       instant: "2026-11-02T12:00:00Z",
       timeZoneId: "America/Edmonton"
     });
+    // assert
     expect(Object.isFrozen(result)).toBe(true);
   });
 
   it("throws for an unknown zone rather than choosing a jurisdiction", () => {
+    // assert
     expect(() =>
       toCorrectedZonedTime({
         instant: "2026-11-02T12:00:00Z",
@@ -123,12 +184,13 @@ describe("toCorrectedZonedTime", () => {
     "2026-11-02T12:00:00",
     "2026-11-02T12:00:00+99:00"
   ])("throws RangeError for the invalid instant %s", (instant) => {
+    // assert
     expect(() =>
       toCorrectedZonedTime({ instant, timeZoneId: "America/Edmonton" })
     ).toThrow(RangeError);
   });
 
-  describe.each<SimulatedTzdata>(["stale", "current"])(
+  describe.each<SimulatedScalarTzdata>(["stale", "current"])(
     "on a %s host",
     (tzdata) => {
       beforeEach(() => {
@@ -138,7 +200,9 @@ describe("toCorrectedZonedTime", () => {
       it.each(rules.map((rule) => [rule.canonicalTimeZoneId, rule] as const))(
         "agrees with inspection just before, at, and after %s's first divergence",
         (timeZoneId, rule) => {
+          // arrange
           const divergence = Date.parse(rule.firstDivergenceInstant);
+          // act
           for (const delta of [-1000, 0, 1000]) {
             const instant = new Date(divergence + delta).toISOString();
             const result = toCorrectedZonedTime({ instant, timeZoneId });
@@ -147,6 +211,7 @@ describe("toCorrectedZonedTime", () => {
               timeZoneId,
               instant
             );
+            // assert
             expect(result.support).toEqual(support);
             expect(result.timeZoneId).toBe(
               support.status === "stale" ? rule.fixedTimeZoneId : timeZoneId

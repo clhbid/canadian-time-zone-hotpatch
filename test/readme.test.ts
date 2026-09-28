@@ -42,10 +42,12 @@ function diagnose(source: string): string[] {
 
 describe("README examples", () => {
   it("contains TypeScript examples", () => {
+    // assert
     expect(examples.length).toBeGreaterThan(0);
   });
 
   it.each(examples)("example %i typechecks against src/", (_, source) => {
+    // assert
     expect(diagnose(source)).toEqual([]);
   });
 });

@@ -40,7 +40,9 @@ describe("toTimeZoneLabel", () => {
   it.each(labelledCases)(
     "labels %s from its first divergence onwards",
     (_, rule) => {
+      // arrange
       const label = labels[rule.ruleId];
+      // assert
       expect(
         toTimeZoneLabel({
           instant: around(rule.firstDivergenceInstant, -1000),
@@ -59,6 +61,7 @@ describe("toTimeZoneLabel", () => {
   );
 
   it.each(cases)("gives %s no label at a historical instant", (timeZoneId) => {
+    // assert
     expect(
       toTimeZoneLabel({ instant: "2019-07-01T12:00:00Z", timeZoneId })
     ).toBeUndefined();
@@ -67,7 +70,9 @@ describe("toTimeZoneLabel", () => {
   it.each(labelledCases)(
     "accepts %s's aliases, case-insensitively",
     (_, rule) => {
+      // arrange
       const instant = around(rule.firstDivergenceInstant, 0);
+      // assert
       for (const alias of rule.aliases) {
         expect(toTimeZoneLabel({ instant, timeZoneId: alias })).toEqual(
           labels[rule.ruleId]
@@ -80,6 +85,7 @@ describe("toTimeZoneLabel", () => {
   );
 
   it.each(cases)("does not label %s's fixed correction zone", (_, rule) => {
+    // assert
     expect(
       toTimeZoneLabel({
         instant: "2026-12-25T12:00:00Z",
@@ -91,6 +97,7 @@ describe("toTimeZoneLabel", () => {
   it.each(unlabelledCases)(
     "gives %s no label around its first divergence",
     (_, rule) => {
+      // assert
       for (const delta of [-1000, 0, 1000]) {
         expect(
           toTimeZoneLabel({
@@ -105,6 +112,7 @@ describe("toTimeZoneLabel", () => {
   // Guards the split above: were a label bundled, the matrix would silently
   // stop covering the boundary it was restricted for.
   it("leaves exactly the Northwest Territories rules unlabelled", () => {
+    // assert
     expect(unlabelledCases.map(([timeZoneId]) => timeZoneId)).toEqual([
       "America/Yellowknife",
       "America/Inuvik"
@@ -115,6 +123,7 @@ describe("toTimeZoneLabel", () => {
   // pins when a label applies, not what it says. The table itself is pinned
   // here, against its published sources.
   it("bundles the approved label for every labelled rule, and none besides", () => {
+    // assert
     expect(labels).toEqual({
       "ab-permanent-time-2026": { long: "Alberta Time", short: "ABT" },
       "bc-permanent-time-2026": { long: "Pacific Time", short: "PCT" },
@@ -127,6 +136,7 @@ describe("toTimeZoneLabel", () => {
   it.each(["America/Toronto", "America/Dawson_Creek", "UTC"])(
     "returns no label for the ungoverned zone %s",
     (timeZoneId) => {
+      // assert
       expect(
         toTimeZoneLabel({ instant: "2026-12-25T12:00:00Z", timeZoneId })
       ).toBeUndefined();
@@ -136,6 +146,7 @@ describe("toTimeZoneLabel", () => {
   it.each(["Not/AZone", "", "not-a-zone"])(
     "returns no label for the unrecognized identifier %s rather than throwing",
     (timeZoneId) => {
+      // assert
       expect(
         toTimeZoneLabel({ instant: "2026-12-25T12:00:00Z", timeZoneId })
       ).toBeUndefined();
@@ -145,6 +156,7 @@ describe("toTimeZoneLabel", () => {
   it.each(["not-an-instant", "2026-12-25T12:00:00", ""])(
     "returns no label for the malformed instant %s rather than throwing",
     (instant) => {
+      // assert
       expect(
         toTimeZoneLabel({ instant, timeZoneId: "America/Edmonton" })
       ).toBeUndefined();

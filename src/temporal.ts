@@ -41,23 +41,38 @@ function isTemporalNamespace(
     return false;
   }
   const namespace = candidate as Record<string, Record<string, unknown>>;
-  return requiredStatics.every((path) => {
+  const hasRequiredStatics = requiredStatics.every((path) => {
     const [name, member] = path.split(".") as [string, string];
     return typeof namespace[name]?.[member] === "function";
   });
+  if (!hasRequiredStatics) {
+    return false;
+  }
+  const zonedDateTimePrototype = (
+    namespace.ZonedDateTime as { prototype?: Record<string, unknown> }
+  )?.prototype;
+  return typeof zonedDateTimePrototype?.getTimeZoneTransition === "function";
 }
+
+/** Namespaces that passed validation, so a render-path call checks each only once. */
+const validated = new WeakSet<object>();
 
 /** Validates `candidate`, throwing `MissingTemporalError` when it is unusable. */
 export function requireTemporal(candidate: unknown): TemporalNamespace {
+  if (validated.has(candidate as object)) {
+    return candidate as TemporalNamespace;
+  }
   if (!isTemporalNamespace(candidate)) {
     throw new MissingTemporalError();
   }
+  validated.add(candidate);
   return candidate;
 }
 
 /**
  * The host's own `globalThis.Temporal`. Read on every call, so a global
- * installed after this module is imported is still picked up.
+ * installed after this module is imported is still picked up; each distinct
+ * global is validated only the first time it is read.
  */
 export function requireGlobalTemporal(): TemporalNamespace {
   return requireTemporal((globalThis as { Temporal?: unknown }).Temporal);

@@ -10,6 +10,7 @@ const pkg = JSON.parse(readFileSync(`${root}package.json`, "utf8")) as {
 
 describe("version", () => {
   it("matches package.json's version", () => {
+    // assert
     expect(version).toBe(pkg.version);
   });
 });

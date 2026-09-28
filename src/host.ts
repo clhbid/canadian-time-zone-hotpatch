@@ -24,6 +24,15 @@ export function observeOffset(
   }
 }
 
+/**
+ * Identifies the time zone data `temporal` reads, for caching what is
+ * observed from it. That data cannot change while the page runs, so the
+ * namespace itself serves.
+ */
+export function hostDataKey(temporal: TemporalNamespace): object {
+  return temporal;
+}
+
 /** Whether the host recognizes `timeZoneId` as a time zone identifier. */
 export function isKnownTimeZoneId(
   temporal: TemporalNamespace,
@@ -32,6 +41,29 @@ export function isKnownTimeZoneId(
   // Any instant serves to test whether the host recognizes a zone.
   const epoch = temporal.Instant.fromEpochMilliseconds(0);
   return observeOffset(timeZoneId, epoch) !== undefined;
+}
+
+/**
+ * Next instant after `instant` at which the host's own data changes
+ * `timeZoneId`'s UTC offset, or `undefined` when it reports none, including
+ * for an invalid zone. By spec, `getTimeZoneTransition` reports only
+ * UTC-offset changes, wherever they fall — even one tzdata ships years
+ * before it takes effect.
+ */
+export function observeNextTransition(
+  timeZoneId: string,
+  instant: HostInstant
+): HostInstant | undefined {
+  try {
+    const next = instant
+      .toZonedDateTimeISO(timeZoneId)
+      // Requires temporal-polyfill 0.3.0+ or @js-temporal/polyfill 0.5.0+;
+      // `src/temporal.ts` rejects an implementation without it.
+      .getTimeZoneTransition("next");
+    return next?.toInstant();
+  } catch {
+    return undefined;
+  }
 }
 
 /**
