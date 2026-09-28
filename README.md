@@ -35,16 +35,17 @@ instance — and either install it globally with its `/global` entry point or ha
 `createHotpatch`, as [Supplying a Temporal implementation](#supplying-a-temporal-implementation)
 shows.
 
-Detection also requires `Temporal.ZonedDateTime.prototype.getTimeZoneTransition` (every native
+`Temporal.ZonedDateTime.prototype.getTimeZoneTransition`is also required. Every native
 `Temporal` has it; polyfills need at least `temporal-polyfill` 0.3.0 or `@js-temporal/polyfill`
-0.5.0). An implementation without it throws `MissingTemporalError`, and where that surfaces depends
-on where the implementation comes from:
+0.5.0. An implementation without it throws `MissingTemporalError`.
 
-- `createHotpatch({ temporal })` validates the one it is given and throws immediately.
-- The top-level functions, and an instance from `createHotpatch()`, read `globalThis.Temporal` when
+When the `Temporal` implementation is validated depends on if you're using `createHotpath()` or not.
+
+- `createHotpatch({ temporal })` validates the implementation when it is given and throws immediately.
+- The top-level functions read `globalThis.Temporal` when
   called and throw from that call.
 
-Importing the package never throws. Each implementation is validated once, not on every call.
+Importing the package never throws and is always side-effect free. The `Temporal` implementation is only validated once, not on every call.
 
 ### Verifying this package
 
