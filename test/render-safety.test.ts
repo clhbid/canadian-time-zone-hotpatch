@@ -29,6 +29,7 @@ const timeZoneIds = fc.oneof(
 
 describe("render safety", () => {
   it("inspectTimeZoneSupport never throws for an arbitrary timeZoneId", () => {
+    // assert
     fc.assert(
       fc.property(fc.string(), (timeZoneId) => {
         inspectTimeZoneSupport(timeZoneId);
@@ -40,6 +41,7 @@ describe("render safety", () => {
   // inspection declines to call `unknown` is one the correction can handle,
   // so the guarded branch cannot throw the error the guard is there to avoid.
   it("corrects without throwing for every zone the inspection clears", () => {
+    // assert
     fc.assert(
       fc.property(timeZoneIds, (timeZoneId) => {
         if (
@@ -55,6 +57,7 @@ describe("render safety", () => {
   });
 
   it("toTimeZoneLabel never throws for arbitrary instant and timeZoneId strings", () => {
+    // assert
     fc.assert(
       fc.property(fc.string(), fc.string(), (instant, timeZoneId) => {
         toTimeZoneLabel({ instant, timeZoneId });

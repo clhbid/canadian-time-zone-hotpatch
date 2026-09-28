@@ -4,6 +4,7 @@ import { packageRootExportNames } from "./package-root-export-names.js";
 
 describe("package root", () => {
   it("exports exactly the trimmed runtime surface", () => {
+    // assert
     expect(Object.keys(pkg).sort()).toEqual(packageRootExportNames);
   });
 
@@ -21,11 +22,13 @@ describe("package root", () => {
       ["current", "not_applicable", "rule_outdated", "stale", "unknown"]
     ]
   ])("%s is frozen and exposes exactly its members", (_, constant, members) => {
+    // assert
     expect(Object.keys(constant).sort()).toEqual(members);
     expect(Object.isFrozen(constant)).toBe(true);
   });
 
   it("exports the rule table the package corrects with", () => {
+    // assert
     expect(pkg.rules).toMatchObject([
       {
         ruleId: "ab-permanent-time-2026",
@@ -61,6 +64,7 @@ describe("package root", () => {
   });
 
   it("is frozen at every level and rejects writes", () => {
+    // assert
     expect(Object.isFrozen(pkg.rules)).toBe(true);
     for (const rule of pkg.rules) {
       expect(Object.isFrozen(rule)).toBe(true);

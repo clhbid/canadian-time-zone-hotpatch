@@ -69,11 +69,14 @@ describe("ungoverned zone pass-through", () => {
   // A derivation that excluded everything would leave every case below
   // vacuously passing.
   it("derives a non-empty set of zones outside the rule table", () => {
+    // assert
     expect(ungovernedZones.length).toBeGreaterThan(300);
   });
 
   it("keeps the backward links the rule table does not govern", () => {
+    // arrange
     const links = backwardLinks.filter(isUngoverned);
+    // assert
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
       expect(ungovernedZones).toContain(link);
@@ -82,12 +85,14 @@ describe("ungoverned zone pass-through", () => {
 
   describe.each(ungovernedZones)("%s", (timeZoneId) => {
     it("corrects an instant to exactly what the host returns", () => {
+      // act
       for (const instant of instants) {
         const expected =
           temporal.Instant.from(instant).toZonedDateTimeISO(timeZoneId);
 
         const result = toCorrectedZonedTime({ instant, timeZoneId });
 
+        // assert
         expect(result.instant).toBe(expected.toInstant().toString());
         expect(result.offset).toBe(expected.offset);
         expect(result.timeZoneId).toBe(expected.timeZoneId);
@@ -95,6 +100,7 @@ describe("ungoverned zone pass-through", () => {
     });
 
     it("resolves a wall-clock reading to exactly the instant the host assigns", () => {
+      // act
       for (const wallTime of wallTimes) {
         const local = temporal.PlainDateTime.from(wallTime);
         for (const disambiguation of disambiguations) {
@@ -106,6 +112,7 @@ describe("ungoverned zone pass-through", () => {
           }
 
           if (expected === undefined) {
+            // assert
             expect(() =>
               toCorrectedInstant({ wallTime, timeZoneId, disambiguation })
             ).toThrow(RangeError);
@@ -117,6 +124,7 @@ describe("ungoverned zone pass-through", () => {
             timeZoneId,
             disambiguation
           });
+          // assert
           expect(result.instant).toBe(expected.toInstant().toString());
           expect(result.offset).toBe(expected.offset);
           expect(result.timeZoneId).toBe(expected.timeZoneId);
@@ -125,6 +133,7 @@ describe("ungoverned zone pass-through", () => {
     });
 
     it("reports not_applicable and no label", () => {
+      // assert
       expect(inspectTimeZoneSupport(timeZoneId)).toEqual({
         status: "not_applicable",
         timeZoneId
@@ -136,7 +145,9 @@ describe("ungoverned zone pass-through", () => {
   });
 
   it("reports unknown, and throws UnknownTimeZoneError, for a host-rejected identifier", () => {
+    // arrange
     const timeZoneId = "Not/AZone";
+    // assert
     expect(inspectTimeZoneSupport(timeZoneId)).toEqual({
       status: "unknown",
       timeZoneId

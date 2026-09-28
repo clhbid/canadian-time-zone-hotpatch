@@ -3,6 +3,7 @@ import { findRule, normalizeTimeZoneId, rules } from "../src/rules.js";
 
 describe("rules", () => {
   it("is frozen at every level", () => {
+    // assert
     expect(Object.isFrozen(rules)).toBe(true);
     for (const rule of rules) {
       expect(Object.isFrozen(rule)).toBe(true);
@@ -11,6 +12,7 @@ describe("rules", () => {
   });
 
   it("records a legal commencement instant no later than the first divergence", () => {
+    // assert
     for (const rule of rules) {
       if (!rule.legalEffectiveInstant) {
         continue;
@@ -32,7 +34,9 @@ describe("rules", () => {
   ])(
     "governs %s with permanent offset %s via %s",
     (canonicalTimeZoneId, offset, fixedTimeZoneId) => {
+      // act
       const rule = findRule(canonicalTimeZoneId);
+      // assert
       expect(rule?.offset).toBe(offset);
       expect(rule?.fixedTimeZoneId).toBe(fixedTimeZoneId);
     }
@@ -59,7 +63,9 @@ describe("rules", () => {
   ])(
     "records the legal and first-divergent instants for %s",
     (timeZoneId, legalEffectiveInstant, firstDivergenceInstant) => {
+      // act
       const rule = findRule(timeZoneId);
+      // assert
       expect(rule?.legalEffectiveInstant).toBe(legalEffectiveInstant);
       expect(rule?.firstDivergenceInstant).toBe(firstDivergenceInstant);
     }
@@ -72,6 +78,7 @@ describe("rules", () => {
   ])(
     "matches %s and its alias %s case-insensitively",
     (canonicalTimeZoneId, alias, expected) => {
+      // assert
       expect(normalizeTimeZoneId(canonicalTimeZoneId)).toBe(expected);
       expect(normalizeTimeZoneId(alias)).toBe(expected);
     }
@@ -80,7 +87,9 @@ describe("rules", () => {
   it.each(["America/Yellowknife", "America/Inuvik"])(
     "governs %s under its own rule, claiming no alias",
     (timeZoneId) => {
+      // act
       const rule = findRule(timeZoneId);
+      // assert
       expect(rule?.jurisdiction).toBe("Northwest Territories");
       expect(rule?.aliases).toEqual([]);
       expect(normalizeTimeZoneId(timeZoneId)).toBe(timeZoneId);
@@ -89,6 +98,7 @@ describe("rules", () => {
   );
 
   it("leaves Canada/Mountain with Alberta", () => {
+    // assert
     expect(findRule("Canada/Mountain")?.ruleId).toBe("ab-permanent-time-2026");
   });
 
@@ -99,6 +109,7 @@ describe("rules", () => {
     "America/Fort_Nelson",
     "America/Toronto"
   ])("does not govern unaffected zone %s", (timeZoneId) => {
+    // assert
     expect(findRule(timeZoneId)).toBeUndefined();
     expect(normalizeTimeZoneId(timeZoneId)).toBe(timeZoneId);
   });

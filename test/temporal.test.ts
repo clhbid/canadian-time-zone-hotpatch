@@ -102,6 +102,7 @@ describe("a missing Temporal implementation", () => {
   // The type above pins the table to the interface; this pins it to what
   // `createHotpatch` actually returns, so neither can drift from the table.
   it("is exercised through every function an instance exposes", () => {
+    // assert
     expect(Object.keys(callsNeedingTemporal).sort()).toEqual(
       Object.keys(createHotpatch({ temporal: PolyfillTemporal })).sort()
     );
@@ -110,10 +111,13 @@ describe("a missing Temporal implementation", () => {
   it.each(everyCall)(
     "throws MissingTemporalError from the top-level %s with no global and nothing supplied",
     async (_name, call) => {
+      // arrange
       vi.stubGlobal("Temporal", undefined);
       const pkg = await import("../src/index.js");
+      // act
       const attempt = () => call(pkg);
 
+      // assert
       expect(attempt).toThrow(MissingTemporalError);
       // Both remedies are named, so the message says what to do next.
       expect(attempt).toThrow(/global Temporal/);
@@ -124,9 +128,12 @@ describe("a missing Temporal implementation", () => {
   it.each(everyCall)(
     "throws MissingTemporalError from %s on an instance built without one",
     (_name, call) => {
+      // arrange
       const hotpatch = createHotpatch();
+      // act
       vi.stubGlobal("Temporal", undefined);
 
+      // assert
       expect(() => call(hotpatch)).toThrow(MissingTemporalError);
     }
   );
@@ -210,6 +217,7 @@ describe("a missing Temporal implementation", () => {
   ])(
     "throws MissingTemporalError from createHotpatch when temporal is %s",
     (_, invalid) => {
+      // assert
       expect(() =>
         createHotpatch({ temporal: invalid as unknown as TemporalNamespace })
       ).toThrow(MissingTemporalError);
@@ -217,6 +225,7 @@ describe("a missing Temporal implementation", () => {
   );
 
   it("accepts a minimal namespace that has getTimeZoneTransition", () => {
+    // assert
     expect(() =>
       createHotpatch({
         temporal: namespaceCandidate() as unknown as TemporalNamespace
@@ -227,10 +236,13 @@ describe("a missing Temporal implementation", () => {
 
 describe("a global Temporal implementation", () => {
   it("is used by the top-level exports with no caller changes", async () => {
+    // arrange
     vi.stubGlobal("Temporal", PolyfillTemporal);
 
+    // act
     const { toCorrectedZonedTime } = await import("../src/index.js");
 
+    // assert
     expect(toCorrectedZonedTime(edmonton)).toMatchObject(corrected);
   });
 
@@ -240,9 +252,12 @@ describe("a global Temporal implementation", () => {
   it.each(everyCall)(
     "answers from the top-level %s what an instance answers",
     async (_name, call) => {
+      // arrange
       vi.stubGlobal("Temporal", PolyfillTemporal);
+      // act
       const pkg = await import("../src/index.js");
 
+      // assert
       expect(call(pkg)).toEqual(
         call(createHotpatch({ temporal: PolyfillTemporal }))
       );
@@ -252,10 +267,13 @@ describe("a global Temporal implementation", () => {
   // Asserted against values rather than against an instance: a wrapper that
   // ignored its argument would agree with one that did the same.
   it("classifies a governed and an unrecognized zone through the export", async () => {
+    // arrange
     vi.stubGlobal("Temporal", PolyfillTemporal);
 
+    // act
     const { inspectTimeZoneSupport } = await import("../src/index.js");
 
+    // assert
     expect(inspectTimeZoneSupport(edmonton.timeZoneId)).toEqual({
       status: "stale",
       timeZoneId: "America/Edmonton",
@@ -268,8 +286,11 @@ describe("a global Temporal implementation", () => {
   });
 
   it("is picked up even when it is installed after the package is imported", async () => {
+    // arrange
     vi.stubGlobal("Temporal", undefined);
+    // act
     const { toCorrectedZonedTime } = await import("../src/index.js");
+    // assert
     expect(() => toCorrectedZonedTime(edmonton)).toThrow(MissingTemporalError);
 
     vi.stubGlobal("Temporal", PolyfillTemporal);
@@ -278,17 +299,22 @@ describe("a global Temporal implementation", () => {
   });
 
   it("is never assigned by the package itself", async () => {
+    // arrange
     vi.stubGlobal("Temporal", undefined);
 
+    // act
     await import("../src/index.js");
 
+    // assert
     expect((globalThis as { Temporal?: unknown }).Temporal).toBeUndefined();
   });
 
   it("is not read, and nothing is thrown, when the package is imported", async () => {
     // A fresh evaluation, so the import itself is what the counter observes.
+    // arrange
     vi.resetModules();
     let reads = 0;
+    // act
     Object.defineProperty(globalThis, "Temporal", {
       configurable: true,
       get() {
@@ -297,6 +323,7 @@ describe("a global Temporal implementation", () => {
       }
     });
 
+    // assert
     try {
       await expect(import("../src/index.js")).resolves.toBeDefined();
       expect(reads).toBe(0);
@@ -309,8 +336,10 @@ describe("a global Temporal implementation", () => {
 
 describe("a supplied Temporal implementation", () => {
   it("is used in preference to a global one", () => {
+    // arrange
     vi.stubGlobal("Temporal", trapNamespace());
 
+    // act
     const {
       inspectHostSupport,
       toCorrectedInstant,
@@ -318,6 +347,7 @@ describe("a supplied Temporal implementation", () => {
       toTimeZoneLabel
     } = createHotpatch({ temporal: PolyfillTemporal });
 
+    // assert
     expect(toCorrectedZonedTime(edmonton)).toMatchObject(corrected);
     expect(
       toCorrectedInstant({
@@ -340,19 +370,24 @@ describe("a supplied Temporal implementation", () => {
   });
 
   it("treats an empty options object like no options at all", () => {
+    // arrange
     vi.stubGlobal("Temporal", PolyfillTemporal);
 
+    // assert
     expect(createHotpatch({}).toCorrectedZonedTime(edmonton)).toEqual(
       createHotpatch().toCorrectedZonedTime(edmonton)
     );
   });
 
   it("treats an explicit undefined temporal like omitting the option", () => {
+    // arrange
     const hotpatch = createHotpatch({
       temporal: undefined as unknown as TemporalNamespace
     });
 
+    // act
     vi.stubGlobal("Temporal", undefined);
+    // assert
     expect(() => hotpatch.toCorrectedZonedTime(edmonton)).toThrow(
       MissingTemporalError
     );

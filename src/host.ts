@@ -48,6 +48,8 @@ export function observeNextTransition(
   try {
     const next = instant
       .toZonedDateTimeISO(timeZoneId)
+      // Requires temporal-polyfill 0.3.0+ or @js-temporal/polyfill 0.5.0+;
+      // `src/temporal.ts` rejects an implementation without it.
       .getTimeZoneTransition("next");
     return next?.toInstant();
   } catch {

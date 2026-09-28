@@ -22,12 +22,7 @@ import type { Disambiguation } from "../../src/types.js";
 
 export type HostModule = typeof hostModule;
 
-/**
- * A host that adopted the rule at first divergence and reports a later
- * offset transition at `revisedAt` — a return to seasonal time, modeled from
- * the same offsets `simulateHostOffset` computes for `stale`, so the offset
- * and transition reads always agree.
- */
+/** A rule the host adopted at first divergence, then revised at `revisedAt`, an ISO instant. */
 export interface RevisedTzdata {
   readonly revisedAt: string;
 }

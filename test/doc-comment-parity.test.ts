@@ -80,6 +80,7 @@ const members = hotpatchMembers();
 describe("doc comment parity", () => {
   // Guards the lookup itself: an empty list would pass every spec below.
   it("finds the functions to compare", () => {
+    // assert
     expect(members.map((member) => member.name).sort()).toEqual([
       "inspectHostSupport",
       "inspectTimeZoneSupport",
@@ -92,12 +93,15 @@ describe("doc comment parity", () => {
   it.each(members.map((member) => [member.name, member] as const))(
     "%s is documented identically on its export and on Hotpatch",
     (name, member) => {
+      // arrange
       const exported = packageExports.get(name);
       if (exported === undefined) {
         throw new Error(`\`${name}\` is not exported from src/index.ts.`);
       }
 
+      // act
       const memberDocumentation = documentation(member);
+      // assert
       expect(memberDocumentation).not.toBe("");
       expect(documentation(exported)).toBe(memberDocumentation);
     }
