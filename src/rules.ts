@@ -140,9 +140,14 @@ function buildRuleIndex(): ReadonlyMap<string, TimeZoneRule> {
 
 const ruleIndex = buildRuleIndex();
 
-/** Looks up the rule governing `timeZoneId` (canonical id or known alias). */
+/**
+ * Looks up the rule governing `timeZoneId` (canonical id or known alias).
+ * A non-string, which an untyped host value can be, is governed by none.
+ */
 export function findRule(timeZoneId: string): TimeZoneRule | undefined {
-  return ruleIndex.get(normalizeLookupKey(timeZoneId));
+  return typeof timeZoneId === "string"
+    ? ruleIndex.get(normalizeLookupKey(timeZoneId))
+    : undefined;
 }
 
 /** Normalizes a known alias to its canonical time zone identifier. */
