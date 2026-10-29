@@ -112,7 +112,8 @@ function governedSupport(
  * omitted, at the governing rule's own first divergence.
  *
  * Never throws for a malformed or unrecognized zone identifier — that is an
- * `unknown` result.
+ * `unknown` result. A non-string, such as the `undefined` some hosts report as
+ * their zone, is inspected as `""`.
  * @param temporal - Temporal namespace to probe with.
  * @param timeZoneId - IANA time zone identifier, matched case-insensitively; aliases are accepted.
  * @param instant - ISO 8601 instant to probe at; defaults to the rule's first divergence.
@@ -125,6 +126,9 @@ export function inspectTimeZoneSupport(
   timeZoneId: string,
   instant?: string
 ): TimeZoneSupport {
+  if (typeof timeZoneId !== "string") {
+    return ungovernedSupport(TimeZoneSupportStatus.unknown, "");
+  }
   const rule = findRule(timeZoneId);
   if (!rule) {
     return ungovernedSupport(

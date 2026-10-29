@@ -67,7 +67,7 @@ export function toCorrectedZonedTime(
     input.instant
   );
   if (support.status === TimeZoneSupportStatus.unknown) {
-    throw new UnknownTimeZoneError(input.timeZoneId);
+    throw new UnknownTimeZoneError(support.timeZoneId);
   }
   const rule = findRule(support.timeZoneId);
   return toCorrected(
@@ -97,7 +97,7 @@ export function toCorrectedInstant(
 
   const probe = inspectTimeZoneSupport(temporal, input.timeZoneId);
   if (probe.status === TimeZoneSupportStatus.unknown) {
-    throw new UnknownTimeZoneError(input.timeZoneId);
+    throw new UnknownTimeZoneError(probe.timeZoneId);
   }
 
   // A stale host repeats the divergence day's skipped hour and mis-offsets
